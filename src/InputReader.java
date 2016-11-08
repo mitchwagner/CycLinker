@@ -102,6 +102,8 @@ public class InputReader {
 		while (startEnd.hasNext()) {
 			String startStr = startEnd.next();
 			String endStr = startEnd.next();
+            // end of line. skip to next line
+            startEnd.nextLine();
 			if (mapToInt.containsKey(startStr) && mapToInt.containsKey(endStr)) {
 				int start = mapToInt.get(startStr);
 				int end = mapToInt.get(endStr);
@@ -119,8 +121,6 @@ public class InputReader {
 				}
 
 			}
-			//Careful: check your input format!
-			startEnd.next();
 		}
 
 	}

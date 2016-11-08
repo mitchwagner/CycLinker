@@ -35,7 +35,10 @@ public class Algorithm {
 	StringBuilder pathOutput;
 	StringBuilder edgeOutput;
 
-	public Algorithm(InputReader graph) {
+    //maximum number of paths to write
+    int maxk;
+
+	public Algorithm(InputReader graph, int maxk) {
 		// set up our variables
 		mapToInt = graph.mapToInt;
 		reverseMap = graph.reverseMap;
@@ -49,6 +52,9 @@ public class Algorithm {
 		edgeCost = graph.edgeCost;
 		pathOutput = new StringBuilder();
 		edgeOutput = new StringBuilder();
+
+        //maxk = graph.maxk;
+        this.maxk = maxk;
 	}
 
 	public void run() {
@@ -96,7 +102,8 @@ public class Algorithm {
 			outputPaths.add(get);
 
 			// output the edge
-			if (startNode != 0 && endNode != 1) {
+			if (startNode != 0 && endNode != 1 && countPath < maxk) {
+			//if (startNode != 0 && endNode != 1) {
 				String outputEdge = reverseMap.get((int) startNode) + "\t"
 						+ reverseMap.get((int) endNode) + "\t" + count2;
 				edgeOutput.append(outputEdge + "\n");
@@ -116,26 +123,33 @@ public class Algorithm {
 			}
 
 			// if it is new, output edge
-			if (newEdge) {
+			if (newEdge && countPath < maxk) {
+			//if (newEdge) {
 				countPath++;
-				pathOutput.append(countPath + " "
-						+ Math.pow(Math.E, -1 * get.totalCost) + " "
+				pathOutput.append(countPath + "\t"
+						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
 						+ getString(pathTemp, reverseMap) + "\n");
-			}
+		        //System.out.println(countPath);
+            }
 
 		}
 
 	}
 
 	// Converts a list of node ID's to a list of node names.
-	// Ex: [123, 4123] -> "P03422 Q02312"
+	// Ex: [123, 4123] -> "P03422|Q02312"
 	private static String getString(ArrayList<Integer> path,
 			HashMap<Integer, String> reverseMap) {
-		StringBuilder output = new StringBuilder();
+		StringBuilder node_names = new StringBuilder();
 		for (Integer a : path) {
-			output.append(reverseMap.get(a) + " ");
+			if (a != 0 && a != 1) {
+                node_names.append(reverseMap.get(a) + "|");
+            }
 		}
-		return output.toString();
+        // remove the last '|'
+        String output = node_names.toString();
+        output = output.substring(0, output.length()-1);
+		return output;
 	}
 
 	// Returns a unique 64-bit integer representation of an edge. (hash with no
