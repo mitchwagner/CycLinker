@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 public class InputReader {
@@ -14,6 +15,10 @@ public class InputReader {
 	// converting to longs.
 	HashMap<String, Integer> mapToInt;
 	HashMap<Integer, String> reverseMap;
+	
+	// List of the starting (source) nodes and ending (target) nodes
+	ArrayList<String> starts;
+	ArrayList<String> ends;
 
 	// Map of edge number to the edge start point and end point, as well as
 	// cost. (order of file read)
@@ -28,10 +33,8 @@ public class InputReader {
 	// function. Works for up to 999,999,999 nodes)
 	HashMap<Long, Double> edgeCost;
 
-	public InputReader(String graphFile, String startEndFile)
+	public InputReader(String graphFile)
 			throws IOException {
-		// Use these scanners to read files
-		startEnd = new Scanner(new File(startEndFile));
 		graphIn = new Scanner(new File(graphFile));
 
 		// These hashmaps map strings for proteins like "P04355" to integers,
@@ -40,7 +43,7 @@ public class InputReader {
 		// converting to longs.
 		mapToInt = new HashMap<String, Integer>();
 		reverseMap = new HashMap<Integer, String>();
-
+		
 		// Map of edge number to the edge start point and end point, as well as
 		// cost.
 		edgeEndSet = new ArrayList<Integer>();
@@ -56,7 +59,6 @@ public class InputReader {
 
 	@SuppressWarnings("unchecked")
 	private void read() {
-		graphIn.nextLine();
 		int index = 2;
 		mapToInt.put("receptor", 0);
 		reverseMap.put(0, "receptor");
@@ -64,6 +66,11 @@ public class InputReader {
 		reverseMap.put(1, "tf");
 		while (graphIn.hasNext()) {
 			String start = graphIn.next();
+			// skip lines that are commented out like the header line
+			if (start.startsWith("#")){
+	            graphIn.nextLine();
+				continue;
+			}
 			String end = graphIn.next();
 			double val = graphIn.nextDouble();
 			graphIn.nextLine();
@@ -98,9 +105,22 @@ public class InputReader {
 			edgeCost.put(hash(start, end), distance);
 			reverseEdges[end].add(new Edge(start, distance));
 		}
-		startEnd.nextLine();
+
+	}
+
+    public void AddStartEnd(String startEndFile)
+			throws IOException {
+		// Use these scanners to read files
+		startEnd = new Scanner(new File(startEndFile));
+		starts = new ArrayList<String>();
+		ends = new ArrayList<String>();
 		while (startEnd.hasNext()) {
 			String startStr = startEnd.next();
+			// skip lines that are commented out like the header line
+			if (startStr.startsWith("#")){
+	            startEnd.nextLine();
+				continue;
+			}
 			String endStr = startEnd.next();
             // end of line. skip to next line
             startEnd.nextLine();
@@ -108,22 +128,42 @@ public class InputReader {
 				int start = mapToInt.get(startStr);
 				int end = mapToInt.get(endStr);
 
+				// add an edge from "receptor" to the source (start)
 				if (end == 0) {
 					edges[end].add(new Edge(start, .00000000000000001));
 					reverseEdges[start].add(new Edge(end, .00000000000000001));
 
 					edgeCost.put(hash(start, end), .00000000000000001);
-				} else {
+				} 
+				// or from the target (end) to "tf"
+				else {
 					edges[start].add(new Edge(end, .00000000000000001));
 					reverseEdges[end].add(new Edge(start, .00000000000000001));
 
 					edgeCost.put(hash(start, end), .00000000000000001);
 				}
-
 			}
 		}
-
-	}
+    }
+    
+    // remove the "receptor" and "tf" edges from the edges and reverseEdges lists.
+    public void RemoveStartEnd(){
+    	edges[0] = new ArrayList<Edge>();
+    	reverseEdges[1] = new ArrayList<Edge>();
+    }
+    
+    // function to parse the input file and return it as a list of each line.
+    public ArrayList<String> ParseFileList(String argFile)
+			throws IOException {
+    	Scanner s = new Scanner( new File(argFile));
+    	ArrayList<String> list = new ArrayList<String>();
+    	// read each line and add it to the list
+    	while (s.hasNext()){
+    		list.add(s.next());
+    	}
+    	s.close();
+    	return list;
+    }
 
 	public static long hash(long startNode, long endNode) {
 		return startNode * 1000000000l + endNode;
