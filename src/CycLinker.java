@@ -19,13 +19,15 @@ public class CycLinker {
 		ArrayList<String> outputPrefixes = new ArrayList<String>();
         int maxk = Integer.parseInt(args[3]);
         long startTime;
-        long algorithmTime = 0;
-        long fileWritingTime = 0;
+        double inputTime; 
+        double algorithmTime = 0;
+        double fileWritingTime = 0;
 		
 		//Read input; build graph.
         startTime = System.nanoTime();
 		InputReader input = new InputReader(graphFileName);
-        System.out.println("Time (ms) taken to parse graph: " + (System.nanoTime() - startTime) / 1000000);
+        inputTime = (System.nanoTime() - startTime) / 1000000;
+        System.out.println("Time to parse graph: " + inputTime / 1000 + " sec");
 
 		// get the startEnds and outputPrefixes from the arguments
         if (args.length > 4 && args[4].equalsIgnoreCase("--multi-run")){
@@ -53,20 +55,23 @@ public class CycLinker {
             Algorithm execute = new Algorithm(input, maxk);
             execute.run();
             // keep adding up the time taken to run the algorithm
-            algorithmTime += (System.nanoTime() - startTime) / 1000000000;
+            algorithmTime += (System.nanoTime() - startTime) / 1000000;
             //System.out.println("Time (ms) taken to run: " + (System.nanoTime() - startTime) / 1000000000);
 
             //Output results to file.
             startTime = System.nanoTime();
             OutputWriter print = new OutputWriter(execute, outputPrefixes.get(i));
             print.printToFile();		
-            fileWritingTime += (System.nanoTime() - startTime) / 1000000000;
+            fileWritingTime += (System.nanoTime() - startTime) / 1000000;
             //System.out.println("Time (ms) taken to write output: " + (System.nanoTime() - startTime) / 1000000000);
 
             // remove the sources and targets from the graph for the next run 
             input.RemoveStartEnd();
         }
-        System.out.println("Total seconds taken to run: " + algorithmTime + ". Avg per run: " + algorithmTime / startEnds.size());
-        System.out.println("Total seconds taken to write output: " + fileWritingTime + ". Avg per run: " + fileWritingTime / startEnds.size());
+        // divide by 1000 to get the time in seconds 
+        algorithmTime = algorithmTime / 1000;
+        fileWritingTime = fileWritingTime / 1000;
+        System.out.println("Total time to run algorithm: " + algorithmTime + " sec. Avg per run: " + algorithmTime / startEnds.size() + " sec");
+        System.out.println("Total time to write output: " + fileWritingTime + " sec. Avg per run: " + fileWritingTime / startEnds.size() + " sec");
 	}
 }
