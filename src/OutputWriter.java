@@ -8,6 +8,7 @@ public class OutputWriter {
 	Algorithm execute;
 	public OutputWriter(Algorithm execute, String prefix) throws IOException{
 		this.execute = execute;
+        // TODO make an input option for choosing which files to write
 		EdgeWriter = new PrintWriter(prefix+"-ranked-edges.txt");
 		PathWriter = new PrintWriter(prefix+"-paths.txt");
 		EdgeWriter.append(execute.edgeOutput);

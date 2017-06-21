@@ -22,12 +22,13 @@ public class CycLinker {
         double inputTime; 
         double algorithmTime = 0;
         double fileWritingTime = 0;
+        boolean verbose = true;
 		
 		//Read input; build graph.
         startTime = System.nanoTime();
 		InputReader input = new InputReader(graphFileName);
         inputTime = (System.nanoTime() - startTime) / 1000000;
-        System.out.println("Time to parse graph: " + inputTime / 1000 + " sec");
+        System.out.println("Time to parse input graph: " + inputTime / 1000 + " sec");
 
 		// get the startEnds and outputPrefixes from the arguments
         if (args.length > 4 && args[4].equalsIgnoreCase("--multi-run")){
@@ -35,6 +36,22 @@ public class CycLinker {
         	// parse the startEnds list and outputPrefixes list from the specified input files
         	startEnds = input.ParseFileList(startEndsArg);
         	outputPrefixes = input.ParseFileList(outputPrefixesArg);
+            if (startEnds.size() != outputPrefixes.size()){
+                System.out.println("Error: # of startEnds does not equal # of outputPrefixes: " + startEnds.size() + " " + outputPrefixes.size());
+                System.exit(1);
+            }
+
+            // don't print everything out to the log file
+            verbose = false;
+            for (int i = 0; i < startEnds.size(); i++){
+                // first make sure all of the startEnds have sources and targets in the network
+                // read the start end file, which also adds the edges from super-source to sources and from targets to super-target
+                input.AddStartEnd(startEnds.get(i), verbose);
+                // remove the sources and targets from the graph for the next run 
+                input.RemoveStartEnd();
+            }
+            // we already printed the stats abou the # of sources and targets in the network
+            System.out.println("Running Cyclinker on " + startEnds.size() + " sets of sources and targets");
         }
         else{
         	// put the single startEnd and outputPrefixes into a list
@@ -42,13 +59,9 @@ public class CycLinker {
         	outputPrefixes.add(outputPrefixesArg);
         }
 
-        if (startEnds.size() != outputPrefixes.size()){
-        	System.out.println("Error: # of startEnds does not equal # of outputPrefixes: " + startEnds.size() + " " + outputPrefixes.size());
-        }
-
         for (int i = 0; i < startEnds.size(); i++){
             // read the start end file
-            input.AddStartEnd(startEnds.get(i));
+            input.AddStartEnd(startEnds.get(i), verbose);
 		
             //Execute the algorithm.
             startTime = System.nanoTime();

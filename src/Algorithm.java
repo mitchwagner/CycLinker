@@ -16,7 +16,7 @@ public class Algorithm {
 	// cost. (order of file read)
 	ArrayList<Integer> edgeEndSet;
 	ArrayList<Integer> edgeStartSet;
-	ArrayList<Double> costs;
+	ArrayList<Double> weights;
 	ArrayList<Edge>[] edges;
 	ArrayList<Edge>[] reverseEdges;
 
@@ -45,7 +45,7 @@ public class Algorithm {
 
 		edgeEndSet = graph.edgeEndSet;
 		edgeStartSet = graph.edgeStartSet;
-		costs = graph.costs;
+		weights = graph.weights;
 		edges = graph.edges;
 		reverseEdges = graph.reverseEdges;
 
@@ -61,7 +61,7 @@ public class Algorithm {
 		int start = 0; // super source = 0
 		int end = 1; // super sink = 1
 		int n = mapToInt.size(); // number of nodes
-		int e = costs.size(); // number of edges
+		int e = weights.size(); // number of edges
 
 		// Dijkstra's from the start, and the end.
 		// Stores the cost at from the start to all points.
