@@ -32,8 +32,18 @@ public class InputReader {
 	// Key for edge is a perfect hash of the start and end point. (use given
 	// function. Works for up to 999,999,999 nodes)
 	HashMap<Long, Double> edgeCost;
+	
+	// Add the log of the specified penalty to the cost of each edge. 
+	// This will effectively increase the cost of each path by the length * edge penalty
+	double edgePenalty;
 
-	public InputReader(String graphFile)
+    // Option to split family nodes (proteins joined by a comma) that contain a source or target 
+    // into the individual proteins. 
+    // For example: suppose a source node X is present in the family node X,Y,Z.
+    // All edges containing X,Y,Z will be split (such as X,Y,Z -> A split to X->A, Y->A and Z->A)
+    //boolean splitFamilyNodes;
+
+	public InputReader(String graphFile, double edgePenalty)
 			throws IOException {
 		graphIn = new Scanner(new File(graphFile));
 
@@ -54,6 +64,13 @@ public class InputReader {
 		// Key for edge is a perfect hash of the start and end point. (use given
 		// function. Works for up to 999,999,999 nodes)
 		edgeCost = new HashMap<Long, Double>();
+		
+		// Add the log of the specified penalty to the cost of each edge. 
+		// This will effectively increase the cost of each path by the length * edge penalty
+		this.edgePenalty = edgePenalty;
+
+        // Option to split family nodes (proteins joined by a comma) that contain a source or target 
+        //this.splitFamilyNodes = splitFamilyNodes;
 		read();
 	}
 
@@ -113,6 +130,8 @@ public class InputReader {
                 System.out.println("Must be between 0 and 1. Quitting.");
                 System.exit(1);
             }
+            // add the edge penalty. By default, it is 1 (which will be 0 after the log)
+            cost = cost + Math.log(edgePenalty);
 			edges[start].add(new Edge(end, cost));
 			edgeCost.put(hash(start, end), cost);
 			reverseEdges[end].add(new Edge(start, cost));
@@ -120,9 +139,10 @@ public class InputReader {
 
 	}
 
-    public void AddStartEnd(String startEndFile, boolean verbose)
+    public void AddStartEnd(String startEndFile, boolean startEndsPenalty, boolean verbose)
 			throws IOException {
 		// Use these scanners to read files
+		//System.out.println(startEndFile);
 		startEnd = new Scanner(new File(startEndFile));
 		starts = new ArrayList<Integer>();
 		ends = new ArrayList<Integer>();
@@ -138,6 +158,11 @@ public class InputReader {
 				continue;
 			}
 			String nodeTypeStr = startEnd.next();
+			// by default, the cost of a super-source or super-target edge is 0
+			double cost = .00000000000000001;
+			if (startEndsPenalty) {
+				cost = Double.parseDouble(startEnd.next());
+			}
             // end of line. skip to next line
             startEnd.nextLine();
             if (mapToInt.containsKey(nodeTypeStr)) {
@@ -158,19 +183,19 @@ public class InputReader {
                 // 'receptor' acts as the super source, 'tf' as the super target
 				if (rec_or_tf == 0) {
                     // add an edge from "receptor" to the source (node)
-					edges[rec_or_tf].add(new Edge(node, .00000000000000001));
+					edges[rec_or_tf].add(new Edge(node, cost));
                     // add a reverse edge from the source to 'receptor'
-					reverseEdges[node].add(new Edge(rec_or_tf, .00000000000000001));
+					reverseEdges[node].add(new Edge(rec_or_tf, cost));
 
-					edgeCost.put(hash(node, rec_or_tf), .00000000000000001);
+					edgeCost.put(hash(node, rec_or_tf), cost);
                     starts.add(node);
 				} 
 				// or from the target (node) to "tf"
 				else {
-					edges[node].add(new Edge(rec_or_tf, .00000000000000001));
-					reverseEdges[rec_or_tf].add(new Edge(node, .00000000000000001));
+					edges[node].add(new Edge(rec_or_tf, cost));
+					reverseEdges[rec_or_tf].add(new Edge(node, cost));
 
-					edgeCost.put(hash(node, rec_or_tf), .00000000000000001);
+					edgeCost.put(hash(node, rec_or_tf), cost);
                     ends.add(node);
 				}
 			}
@@ -181,11 +206,11 @@ public class InputReader {
                     ends.size() + "/" + num_targets + " tfs were in the network");
         }
         if (starts.size() == 0) {
-            System.out.println("Error: No sources were found to connect to the super-source. Quitting");
+            System.out.println("Error: No sources were found to connect to the super-source for file: " + startEndFile + ". Quitting");
             System.exit(1);
         }
         if (ends.size() == 0) {
-            System.out.println("Error: No targets were found to connect to the super-target. Quitting");
+            System.out.println("Error: No targets were found to connect to the super-target for file: " + startEndFile + ". Quitting");
             System.exit(1);
         }
     }
