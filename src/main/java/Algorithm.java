@@ -38,7 +38,7 @@ public class Algorithm {
     //maximum number of paths to write
     int maxk;
 
-	public Algorithm(InputReader graph, int maxk) {
+	public Algorithm(InputReader graph, long maxK) {
 		// set up our variables
 		mapToInt = graph.mapToInt;
 		reverseMap = graph.reverseMap;
