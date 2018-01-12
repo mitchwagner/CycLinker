@@ -16,9 +16,9 @@ public class InputReader {
 	HashMap<String, Integer> mapToInt;
 	HashMap<Integer, String> reverseMap;
 	
-	// List of the starting (source) nodes and ending (target) nodes (in integer space)
-	ArrayList<Integer> starts;
-	ArrayList<Integer> ends;
+    // List of the starting (source) nodes and ending (target) nodes (in
+    // integer space)
+    ArrayList<Integer> starts; ArrayList<Integer> ends;
 
 	// Map of edge number to the edge start point and end point, as well as
 	// cost. (order of file read)
@@ -34,14 +34,15 @@ public class InputReader {
 	HashMap<Long, Double> edgeCost;
 	
 	// Add the log of the specified penalty to the cost of each edge. 
-	// This will effectively increase the cost of each path by the length * edge penalty
-	double edgePenalty;
+    // This will effectively increase the cost of each path by the length *
+    // edge penalty
+    double edgePenalty;
 
-    // Option to split family nodes (proteins joined by a comma) that contain a source or target 
-    // into the individual proteins. 
-    // For example: suppose a source node X is present in the family node X,Y,Z.
-    // All edges containing X,Y,Z will be split (such as X,Y,Z -> A split to X->A, Y->A and Z->A)
-    //boolean splitFamilyNodes;
+    // Option to split family nodes (proteins joined by a comma) that contain a
+    // source or target into the individual proteins.  For example: suppose a
+    // source node X is present in the family node X,Y,Z.  All edges containing
+    // X,Y,Z will be split (such as X,Y,Z -> A split to X->A, Y->A and Z->A)
+    // boolean splitFamilyNodes;
 
 	public InputReader(String graphFile, double edgePenalty)
 			throws IOException {
@@ -66,10 +67,14 @@ public class InputReader {
 		edgeCost = new HashMap<Long, Double>();
 		
 		// Add the log of the specified penalty to the cost of each edge. 
-		// This will effectively increase the cost of each path by the length * edge penalty
+        // This will effectively increase the cost of each path by the length *
+        // edge penalty
+
 		this.edgePenalty = edgePenalty;
 
-        // Option to split family nodes (proteins joined by a comma) that contain a source or target 
+        // Option to split family nodes (proteins joined by a comma) that
+        // contain a source or target 
+
         //this.splitFamilyNodes = splitFamilyNodes;
 		read();
 	}
@@ -126,11 +131,16 @@ public class InputReader {
             // log is the natural log by default
 			double cost = (Math.log(weights.get(i)) * -1.0);
             if (cost <= 0){
-                System.out.println("Error: invalid weight for edge " + reverseMap.get(start) + "->" + reverseMap.get(end) + ": " + weights.get(i));
+                System.out.println("Error: invalid weight for edge " + 
+                    reverseMap.get(start) + "->" + reverseMap.get(end) + 
+                    ": " + weights.get(i));
+
                 System.out.println("Must be between 0 and 1. Quitting.");
                 System.exit(1);
             }
-            // add the edge penalty. By default, it is 1 (which will be 0 after the log)
+            // add the edge penalty. By default, it is 1 (which will be 0 after
+            // the log)
+
             cost = cost + Math.log(edgePenalty);
 			edges[start].add(new Edge(end, cost));
 			edgeCost.put(hash(start, end), cost);
@@ -139,8 +149,8 @@ public class InputReader {
 
 	}
 
-    public void AddStartEnd(String startEndFile, boolean startEndsPenalty, boolean verbose)
-			throws IOException {
+    public void AddStartEnd(String startEndFile, boolean startEndsPenalty, 
+            boolean verbose) throws IOException {
 		// Use these scanners to read files
 		//System.out.println(startEndFile);
 		startEnd = new Scanner(new File(startEndFile));
@@ -173,7 +183,9 @@ public class InputReader {
                     num_targets += 1;
                 }
             }
-			if (mapToInt.containsKey(nodeStr) && mapToInt.containsKey(nodeTypeStr)) {
+			if (mapToInt.containsKey(nodeStr) && 
+			        mapToInt.containsKey(nodeTypeStr)) {
+
                 // start is the node name
 				int node = mapToInt.get(nodeStr);
                 // end is either 'receptor' or 'tf' 
@@ -201,21 +213,29 @@ public class InputReader {
 			}
 		}
         if (verbose){
-            System.out.println("Reading sources and targets from file: " + startEndFile);
-            System.out.println(starts.size() + "/" + num_sources + " receptors and " + 
-                    ends.size() + "/" + num_targets + " tfs were in the network");
+            System.out.println("Reading sources and targets from file: " + 
+                startEndFile);
+
+            System.out.println(starts.size() + "/" + num_sources + 
+                " receptors and " + ends.size() + "/" + num_targets + 
+                " tfs were in the network");
         }
         if (starts.size() == 0) {
-            System.out.println("Error: No sources were found to connect to the super-source for file: " + startEndFile + ". Quitting");
+            System.out.println("Error: No sources were found to connect to " +
+                "the super-source for file: " + startEndFile + ". Quitting");
+            // TODO: Throw exception
             System.exit(1);
         }
         if (ends.size() == 0) {
-            System.out.println("Error: No targets were found to connect to the super-target for file: " + startEndFile + ". Quitting");
+            System.out.println("Error: No targets were found to connect to " + 
+                "the super-target for file: " + startEndFile + ". Quitting");
+            // TODO: Throw exception
             System.exit(1);
         }
     }
     
-    // remove the "receptor" and "tf" super-source and super-target edges from the edges and reverseEdges lists.
+    // remove the "receptor" and "tf" super-source and super-target edges 
+    // from the edges and reverseEdges lists.
     public void RemoveStartEnd(){
     	edges[0] = new ArrayList<Edge>();
     	reverseEdges[1] = new ArrayList<Edge>();
@@ -238,19 +258,6 @@ public class InputReader {
             }
             edges[ends.get(i)].remove(to_super_target);
         }
-    }
-    
-    // function to parse the input file and return it as a list of each line.
-    public ArrayList<String> ParseFileList(String argFile)
-			throws IOException {
-    	Scanner s = new Scanner( new File(argFile));
-    	ArrayList<String> list = new ArrayList<String>();
-    	// read each line and add it to the list
-    	while (s.hasNext()){
-    		list.add(s.next());
-    	}
-    	s.close();
-    	return list;
     }
 
 	public static long hash(long startNode, long endNode) {
