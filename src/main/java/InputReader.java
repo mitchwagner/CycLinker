@@ -263,7 +263,4 @@ public class InputReader {
 	public static long hash(long startNode, long endNode) {
 		return startNode * 1000000000l + endNode;
 	}
-
-	
-
 }
