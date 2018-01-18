@@ -27,8 +27,8 @@ public class InputReaderRLCSP {
 	ArrayList<Double> productWeights;
 
 	// Each node has an array list of other nodes it is connected to
-	ArrayList<EdgeRLCSP<Integer>>[] productEdges;
-	ArrayList<EdgeRLCSP<Integer>>[] productReverseEdges;
+	ArrayList<Edge>[] productEdges;
+	ArrayList<Edge>[] productReverseEdges;
 
 	// Negative log transform map of edge costs.
 	// Key for edge is a perfect hash of the start and end point. (use given
@@ -78,10 +78,9 @@ public class InputReaderRLCSP {
 
         // Initialize the edges abd reverseEdges lists for each node
         for (int i = 0; i < numNodes; i++) {
-            productEdges[i] = new ArrayList<EdgeRLCSP<Integer>>();
-            productReverseEdges[i] = new ArrayList<EdgeRLCSP<Integer>>();
+            productEdges[i] = new ArrayList<Edge>();
+            productReverseEdges[i] = new ArrayList<Edge>();
         }
-
 
         // (u1, u2) -> (v1, v2) if (u1 -> u2 & v1 -> v2 & label same)
         for (int i = 0; i < networkEdges.size(); i++) {
@@ -177,8 +176,8 @@ public class InputReaderRLCSP {
             // set the cost of the edge as the -log of the edge weight
             // log is the natural log by default
             double cost = (Math.log(productWeights.get(i)) * -1.0);
-            productEdges[start].add(new EdgeRLCSP(start, end, cost));
-            productReverseEdges[end].add(new EdgeRLCSP(end, start, cost));
+            productEdges[start].add(new Edge(end, cost));
+            productReverseEdges[end].add(new Edge(start, cost));
 
             productEdgeCost.put(hash(start, end), cost);
         }
