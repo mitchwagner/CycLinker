@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -11,15 +12,13 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
 
+// TODO: This entire class should be abstracted out into another class
+// that is not static for testability!
+
 public class QuickLinker {
 
 	/** 
 	 * Run QuickLinker.
-	 * This program takes 3 arguments:
-	 * args[0]: graph input file (details in 'InputReader' file)
-	 * args[1]: start/end points (details in 'InputReader' file)
-	 * args[2]: output file name prefix (details in 'OutputReader' file)
-	 * args[3]: maximum number of paths to write (details in 'Algorithm' file)
 	 */
 	public static void main(String[] args) 
 	        throws IOException, ParseException {
@@ -27,7 +26,8 @@ public class QuickLinker {
         CommandLine cmd = getCommandLineOptions(args);
         runWithParameters(cmd);
 
-        // Jeff wanted:
+        // TODO: Timing each of the following:
+        // time to read input
         // time to run all algorithms
         // time to run each algorithm
         // time to write all outputs
@@ -36,27 +36,82 @@ public class QuickLinker {
         // avg time to write an output
 	}
 
+    /**
+     * TODO Add JavaDoc
+     */
 	public static void runWithParameters(CommandLine cmd) 
 			throws IOException, ParseException {
 
-	    InputReader input = readGraphFromParams(cmd);
+		// First, check to see if RLCSP is provided. If so, we do a different
+		// set of things.
+        if (cmd.hasOption("rlcsp")) { 
+            checkRLCSPParams(cmd);
 
-	    ArrayList<String> sourceTargetFiles = getSourcesAndTargets(cmd, input);
-	    ArrayList<String> outputPrefixes = getOutputPrefixes(cmd, input);
+            InputReaderRLCSP input = readGraphFromParamsRLCSP(cmd);
 
-        validateParameters(sourceTargetFiles, outputPrefixes, input, cmd);
+            long maxk = getKfromCommandLine(cmd);
+            AlgorithmRLCSP execute = new AlgorithmRLCSP(input, maxk);
 
-        runAlgorithOverSourceTargetPairs(
-            sourceTargetFiles, outputPrefixes, input, cmd);
+            execute.run();
+            
+            PrintWriter edgeWriter;
+            PrintWriter pathWriter;
+
+		    String prefix= cmd.getOptionValue("out-prefix");
+            edgeWriter = new PrintWriter(prefix + "-ranked-edges.txt");
+            pathWriter = new PrintWriter(prefix + "-paths.txt");
+
+            edgeWriter.append(execute.edgeOutput);
+            pathWriter.append(execute.pathOutput);
+
+            edgeWriter.close();
+            pathWriter.close();
+        }
+        else {
+            InputReader input = readGraphFromParams(cmd);
+
+            ArrayList<String> sourceTargetFiles = 
+                getSourcesAndTargets(cmd, input);
+
+            ArrayList<String> outputPrefixes = getOutputPrefixes(cmd, input);
+
+            validateParameters(sourceTargetFiles, outputPrefixes, input, cmd);
+
+            runAlgorithmOverSourceTargetPairs(
+                sourceTargetFiles, outputPrefixes, input, cmd);
+        }
 	}
 
+    /**
+     * Verify that all parameters necessary for RLCSP QuickLinker have been
+     * passed.
+     */
+	public static void checkRLCSPParams(CommandLine cmd) 
+	        throws ParseException {
+	    if (!cmd.hasOption("dfa")) {
+            throw new ParseException("File containing labeled DFA edgelist " + 
+                "must be specified with --dfa <file>");
+	    }
+	    if (!cmd.hasOption("dfaNodeTypes")) {
+            throw new ParseException("File specifying DFA sources and " +
+                "targets must be specified with --dfaNodeTypes");
+	    }
+	}
+
+    /**
+     * TODO Add JavaDoc
+     */
 	public static InputReader readGraphFromParams(CommandLine cmd) 
 	        throws IOException {
 		String graphFileName = cmd.getOptionValue("network");
         double edgePenalty = getEdgePenaltyFromCommandLine(cmd);
-		return  readGraph(graphFileName, edgePenalty); 
+		return readGraph(graphFileName, edgePenalty); 
 	}
 
+    /**
+     * This method wraps the InputReader constructor.
+     * TODO: We can use this method for timing the read.
+     */
     public static InputReader readGraph(String graphFileName, 
             Double edgePenalty) throws IOException {
 
@@ -64,11 +119,47 @@ public class QuickLinker {
         return input;
     }
 
+    /**
+     * TODO Add JavaDoc
+     */
+	public static InputReaderRLCSP readGraphFromParamsRLCSP(CommandLine cmd) 
+	        throws IOException {
+	    File network = new File(cmd.getOptionValue("network"));
+	    File networkSourcesTargets = 
+	        new File(cmd.getOptionValue("nodeTypes"));
+
+	    File dfa = new File(cmd.getOptionValue("dfa"));
+	    File dfaSourcesTargets = 
+	        new File(cmd.getOptionValue("dfaNodeTypes"));
+
+	    InputReaderRLCSP input = new InputReaderRLCSP(network, 
+	        networkSourcesTargets, dfa, dfaSourcesTargets);
+
+	    return input;
+	}
+
+    /**
+     * This method wraps the InputReaderRLCSP constructor. 
+     * TODO: We can use this method for timing the read.
+     */
+	public static InputReaderRLCSP readGraphRLCSP(File network,
+	        File networkSourcesTargets, File dfa, File dfaSourcesTargets) 
+	        throws IOException {
+
+	        InputReaderRLCSP input = new InputReaderRLCSP(network, 
+	            networkSourcesTargets, dfa, dfaSourcesTargets);
+
+	        return input;
+	}
+
+    /**
+     * TODO Add JavaDoc
+     */
     public static ArrayList<String> getSourcesAndTargets(CommandLine cmd,
             InputReader input) throws IOException {
 
         boolean multiRun = cmd.hasOption("multi-run");
-		String arg = cmd.getOptionValue("start-ends");
+		String arg = cmd.getOptionValue("nodeTypes");
 		
 		ArrayList<String> sourceTargetFiles = null; 
 
@@ -78,13 +169,14 @@ public class QuickLinker {
 		else {
 			sourceTargetFiles = new ArrayList<String>();
 			sourceTargetFiles.add(arg);
-
 		}
 
 		return sourceTargetFiles;
     }
 
-
+    /**
+     * TODO Add JavaDoc
+     */
     public static ArrayList<String> getOutputPrefixes(CommandLine cmd,
             InputReader input) throws IOException {
 		boolean multiRun = cmd.hasOption("multi-run");
@@ -102,6 +194,9 @@ public class QuickLinker {
 		return outputPrefixes;
     }
 
+    /**
+     * TODO Add JavaDoc
+     */
 	public static void validateParameters(ArrayList<String> sourceTargetFiles,
 			ArrayList<String> outputPrefixes, InputReader input, 
 			CommandLine cmd) throws IOException, ParseException {
@@ -114,6 +209,10 @@ public class QuickLinker {
             sourceTargetFiles, input, startEndsPenalty);
 	} 
 
+    /**
+     * Give a list of nodetype files and a list of output prefixes, make sure
+     * that the two are the same length.
+     */
 	public static void ensureListsSameLength(List stFiles, List outputPrefixes) 
 			throws ParseException {
 		int sizeA = stFiles.size();
@@ -144,7 +243,12 @@ public class QuickLinker {
         }
     }
 
-    public static void runAlgorithOverSourceTargetPairs(ArrayList<String> 
+    /**
+     * Iterate through all provided nodetype files and run the QuickLinker
+     * algorithm on the network, using the sets of sources and targets
+     * specified by each respective nodetype file in turn.
+     */
+    public static void runAlgorithmOverSourceTargetPairs(ArrayList<String> 
         stFiles, ArrayList<String> outputPrefixes, InputReader input,
         CommandLine cmd) throws IOException {
 
@@ -163,12 +267,16 @@ public class QuickLinker {
     
             writeResultToFile(execute, outputPrefixes.get(i));
 
-            // remove the sources and targets from the graph for the next run 
+            // Remove the sources and targets from the graph for the next run 
             input.RemoveStartEnd();
         }
 
     }
 
+    /**
+     * Wraps instantiation and call to print of OutputWriter.
+     * TODO: Can be used to time output writing.
+     */
     public static void writeResultToFile(Algorithm alg, String outPrefix) 
             throws IOException {
 
@@ -177,11 +285,17 @@ public class QuickLinker {
         print.printToFile();
     }
 
+    /**
+     * Wraps running of the algorithm.
+     * TODO: Can be used to time running of the algorithm. 
+     */
     public static void runAlgorithm(Algorithm alg) {
         alg.run();
     }
 
-
+    /**
+     * TODO: Add JavaDoc
+     */
     public static CommandLine getCommandLineOptions(String[] args) 
             throws ParseException {
         Options options = getOptions();
@@ -197,6 +311,9 @@ public class QuickLinker {
         return cmd;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Options getOptions() {
         Options options = new Options();
 
@@ -211,6 +328,9 @@ public class QuickLinker {
         return options;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static void handleParseException(ParseException e) 
             throws ParseException {
         HelpFormatter formatter = new HelpFormatter();
@@ -218,7 +338,9 @@ public class QuickLinker {
         throw e;
     }
 
-
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getNetworkOption() {
 		Option option = new Option("n", "network", true, "Input Network");
 		option.setRequired(true);
@@ -226,8 +348,11 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getNodeTypesOption() {
-		Option option = new Option("s", "node-types", true, 
+		Option option = new Option("nodeTypes", true, 
 		    "File specifying the nodes to use as sources and targets");
 
 		option.setRequired(true);
@@ -235,6 +360,9 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getOutPrefixOption() {
         Option option = new Option("o", "out-prefix", true, 
 		    "path/to/prefix for the output files");
@@ -244,6 +372,9 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getKLimitOption() {
 		Option option = new Option("k", "max-k", true, 
 		    "Maximum number of paths to output. " + 
@@ -251,6 +382,9 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getMultiRunOption() {
 		Option option = new Option("m", "multi-run", false, 
 		    "Option to read multiple start-ends file from the " +
@@ -259,6 +393,9 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getEdgePenaltyOption() {
 		Option option = new Option("e", "edge-penalty", true, 
 		    "Not yet implemented! Add the natural log of the specified " +
@@ -268,6 +405,9 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static Option getSourceTargetPenaltyOption() {
 		Option option = new Option("p", "start-ends-penalty", 
 		    false, "Set the cost specified in the third column of the " +
@@ -277,6 +417,40 @@ public class QuickLinker {
 		return option;
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
+    public static Option getRLCSPOption() {
+        Option option = new Option("rlcsp", false,
+            "Run QuickLinker RLCSP variant using supplied DFA");
+
+        return option;
+    }
+
+    /**
+     * TODO: Add JavaDoc
+     */
+    public static Option getDFAOption() {
+        Option option = new Option("dfa", false,
+            "Labeled edgelist for DFA");
+
+        return option;
+    }
+
+    /**
+     * TODO: Add JavaDoc
+     */
+    public static Option getDFANodeTypesOption() {
+        Option option = new Option("dfaNodeTypes", false,
+		    "File specifying the nodes to use as sources and targets for" +
+		    "the DFA");
+
+        return option;
+    }
+
+    /**
+     * TODO: Add JavaDoc
+     */
     public static long getKfromCommandLine(CommandLine cmd) {
         if (cmd.hasOption("max-k")){
             return Long.parseLong(cmd.getOptionValue("max-k")); 
@@ -286,28 +460,34 @@ public class QuickLinker {
         }
     }
 
+    /**
+     * TODO: Add JavaDoc
+     */
     public static double getEdgePenaltyFromCommandLine(CommandLine cmd) {
         if (cmd.hasOption("edge-penalty")) { 
             return Double.parseDouble(cmd.getOptionValue("edge-penalty"));
-        } 
+        }
         // by default, an edge penalty of 1 will not add anything to the
         // cost of an edge (log(1) is 0)
         else {
-            return 1; 
-        } 
+            return 1;
+        }
     }
+ 
+    /**
+     * TODO: Add JavaDoc
+     */
+    public static ArrayList<String> parseFileList(String argFile)
+            throws IOException {
 
-    public static ArrayList<String> parseFileList(String argFile)                         
-            throws IOException {                                                   
+        Scanner s = new Scanner( new File(argFile));
+        ArrayList<String> list = new ArrayList<String>();
 
-        Scanner s = new Scanner( new File(argFile));                               
-        ArrayList<String> list = new ArrayList<String>();                          
+        while (s.hasNext()){
+            list.add(s.next());
+        }
 
-        while (s.hasNext()){                                                       
-            list.add(s.next());                                                    
-        }                                                                          
-
-        s.close();                                                                 
-        return list;                                                               
+        s.close();
+        return list;
     } 
 }

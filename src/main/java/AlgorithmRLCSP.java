@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
 
-public class Algorithm {
+public class AlgorithmRLCSP {
 	// These hashmaps map strings for proteins like "P04355" to integers, and
 	// vice versa
 	// Overflow warning: These integers should never be multiplied, without
@@ -36,26 +36,24 @@ public class Algorithm {
 	StringBuilder edgeOutput;
 
     //maximum number of paths to write
-    long maxk;
+    int maxk;
 
-	public Algorithm(InputReader graph, long maxK) {
+	public AlgorithmRLCSP(InputReaderRLCSP graph, long maxK) {
 		// set up our variables
-		mapToInt = graph.mapToInt;
-		reverseMap = graph.reverseMap;
+		mapToInt = graph.productNodeToInt;
+		reverseMap = graph.productIntToNode;
 
-		edgeEndSet = graph.edgeEndSet;
-		edgeStartSet = graph.edgeStartSet;
-		weights = graph.weights;
-		edges = graph.edges;
-		reverseEdges = graph.reverseEdges;
+		edgeEndSet = graph.productEdgeEndSet;
+		edgeStartSet = graph.productEdgeStartSet;
+		weights = graph.productWeights;
+		edges = graph.productEdges;
+		reverseEdges = graph.productReverseEdges;
 
-		edgeCost = graph.edgeCost;
+		edgeCost = graph.productEdgeCost;
 		pathOutput = new StringBuilder();
 		edgeOutput = new StringBuilder();
 
-        //maxk = graph.maxk;
-        this.maxk = maxK;
-        System.out.println(maxk);
+        this.maxk = maxk;
 	}
 
 	public void run() {
@@ -70,10 +68,6 @@ public class Algorithm {
 		// Stores the cost from the end to all points.
 		final double[] endFromAllNodes = dijkstra(n, end, reverseEdges);
 
-        for (int i = 0; i < startFromAllNodes.length; i++) {
-            System.out.println(startFromAllNodes[i]);
-        }
-
 		// Each edge has a shortest path; We will denote this as a
 		// 'CriticalPath'.
 		// A critical path does not contain only redundant edges. However, a
@@ -85,12 +79,11 @@ public class Algorithm {
 					edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
 					edges);
 			potentialPaths.add(tempPath);
-			System.out.println(tempPath);
 		}
 
 		ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
 
-		// Header
+		// This was in pathlinker output so I do it as well
 		edgeOutput.append("#tail	head	KSP index\n"); 
 
 		int count2 = 0;
@@ -108,10 +101,8 @@ public class Algorithm {
 			long endNode = get.endNode;
 			outputPaths.add(get);
 
-            System.out.println(maxk);
 			// output the edge
 			if (startNode != 0 && endNode != 1 && countPath < maxk) {
-			    System.out.println("got here");
 			//if (startNode != 0 && endNode != 1) {
 				String outputEdge = reverseMap.get((int) startNode) + "\t"
 						+ reverseMap.get((int) endNode) + "\t" + count2;
@@ -138,12 +129,11 @@ public class Algorithm {
 				pathOutput.append(countPath + "\t"
 						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
 						+ getString(pathTemp, reverseMap) + "\n");
-		        System.out.println(countPath);
+		        //System.out.println(countPath);
             }
 
 		}
-		System.out.println(edgeOutput);
-		System.out.println(pathOutput);
+
 	}
 
 	// Converts a list of node ID's to a list of node names.
@@ -162,8 +152,8 @@ public class Algorithm {
 		return output;
 	}
 
-	// Returns a unique 64-bit integer representation of an edge. (hash with no
-	// collisions)
+    // Returns a unique 64-bit integer representation of an edge. (hash with no
+    // collisions)
 	// No two edges can share the same representation.
 	private static long hash(long startNode, long endNode) {
 		// As long as endNode is below 1 billion and above or equal to 0, this
@@ -176,8 +166,8 @@ public class Algorithm {
 		int startNode;
 		// End node of the edge defining the 'CriticalPath'
 		int endNode;
-		// Cost of the shortest path that uses the edge defined by startNode and
-		// endNode.
+        // Cost of the shortest path that uses the edge defined by startNode
+        // and endNode.
 		double totalCost;
 
 		public CriticalPath(int startNode, int endNode,

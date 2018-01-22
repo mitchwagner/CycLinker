@@ -9,6 +9,14 @@ import java.util.Scanner;
 
 public class InputReaderRLCSP {
 
+    // Strings naming the super source and super target nodes
+    private static final String SUPER_SOURCE_NAME = "super source";
+    private static final String SUPER_TARGET_NAME = "super target";
+
+    // The labels identifying sources and targets in source/target files 
+    private static final String SOURCE_NODETYPE_LABEL = "source";
+    private static final String TARGET_NODETYPE_LABEL = "target";
+
     // Node to node ID hashmap for original network
     HashMap<String, Integer> networkNodeToInt;
     HashMap<Integer, String> networkIntToNode;
@@ -20,8 +28,8 @@ public class InputReaderRLCSP {
     // Edge info data structures for product graph
 	// Map of edge number to the edge start point and end point, as well as
 	// cost. (order of file read)
-	
-	// Given the way I am reading the graph in, these might not be necessary
+
+    // Map of edge to edge's start/end/cost
 	ArrayList<Integer> productEdgeStartSet;
 	ArrayList<Integer> productEdgeEndSet;
 	ArrayList<Double> productWeights;
@@ -31,7 +39,7 @@ public class InputReaderRLCSP {
 	ArrayList<Edge>[] productReverseEdges;
 
 	// Negative log transform map of edge costs.
-	// Key for edge is a perfect hash of the start and end point. (use given
+	// Key for edge is aperfect hash of the start and end point. (use given
 	// function. Works for up to 999,999,999 nodes)
 	HashMap<Long, Double> productEdgeCost;
 
@@ -39,17 +47,21 @@ public class InputReaderRLCSP {
     // the product graph
 	HashMap<Long, ArrayList<Long>> correspondingEdges;
 
-	public InputReaderRLCSP(File network, File sourcesTargets, File dfa) 
+	public InputReaderRLCSP(File network, File networkSourcesTargets, 
+	        File dfa, File dfaSourcesTargets) 
 	        throws FileNotFoundException {
 
+        ///////////////////////////////////////////////////////////////////////
         // Read nodes from the original network
 	    HashSet<String> networkNodes = getNodeList(network);
 
+        // Convert HashSet of nodes to an ArrayList
         ArrayList<String> networkNodesList = 
             new ArrayList<String> (networkNodes);
 
         hashNodes(networkNodesList, networkNodeToInt, networkIntToNode);
 
+        ///////////////////////////////////////////////////////////////////////
         // Read nodes from DFA
 	    HashSet<String> dfaNodes = getNodeList(dfa);
 
@@ -67,41 +79,39 @@ public class InputReaderRLCSP {
         ArrayList<EdgeRLCSP<String>> networkEdges = getNetworkEdgeList(network);
         ArrayList<EdgeRLCSP<String>> dfaEdges = getDFAEdgeList(dfa);
 
-        // Make product graph edges
-        // We'll actually be creating two copies of each new edge: one for
-        // each layer of the resulting graph.
+        
+        ///////////////////////////////////////////////////////////////////////
+        // Product graph edge construction starts here
         productEdgeStartSet = new ArrayList<Integer>();
         productEdgeEndSet = new ArrayList<Integer>();
         productWeights = new ArrayList<Double>();
         productEdges = new ArrayList[numNodes];
         productReverseEdges = new ArrayList[numNodes];
 
-        // Initialize the edges abd reverseEdges lists for each node
+        // Initialize the edges and reverseEdges lists for each node
         for (int i = 0; i < numNodes; i++) {
             productEdges[i] = new ArrayList<Edge>();
             productReverseEdges[i] = new ArrayList<Edge>();
         }
 
+        //////////////////////////////////////////////////////////////////////
+        // Creation of product edges
         // (u1, u2) -> (v1, v2) if (u1 -> u2 & v1 -> v2 & label same)
         for (int i = 0; i < networkEdges.size(); i++) {
             EdgeRLCSP<String> networkEdge = networkEdges.get(i);
             for (int j = 0; j < dfaEdges.size(); j++) {
                 EdgeRLCSP<String> dfaEdge = dfaEdges.get(j);
 
-                // If our label is the same, create the edge, and the copy:
+                // If our label is the same, create the edge
                 if (networkEdge.labelMatches(dfaEdge)) {
-                    // Determine the new head and tail nodes
+                    // Determine the edge's product head and tail nodes
                     String networkTail = networkEdge.getTail();
                     String dfaTail = dfaEdge.getTail();
                     String newTail = networkTail + dfaTail;
-                    String newTailCopy = 
-                        duplicateNode(networkTail) + duplicateNode(dfaTail);
 
                     String networkHead = networkEdge.getHead();
                     String dfaHead = dfaEdge.getHead();
                     String newHead = networkHead + dfaHead;
-                    String newHeadCopy = 
-                        duplicateNode(networkHead) + duplicateNode(dfaHead);
 
                     // At this point, the new head and tail nodes should be
                     // product nodes in our hashes. Get their Integer IDs.
@@ -109,35 +119,22 @@ public class InputReaderRLCSP {
                     Integer newTailInt = productNodeToInt.get(newTail);
                     Integer newHeadInt = productNodeToInt.get(newHead);
 
-                    Integer newTailCopyInt = productNodeToInt.get(newTailCopy);
-                    Integer newHeadCopyInt = productNodeToInt.get(newHeadCopy);
-
                     EdgeRLCSP<Integer> productEdge = 
                         new EdgeRLCSP<Integer>(newTailInt, newHeadInt,
                             networkEdge.getDist(), "x");
 
-                    EdgeRLCSP<Integer> productEdgeCopy = 
-                        new EdgeRLCSP<Integer>(newTailCopyInt, newHeadCopyInt,
-                            networkEdge.getDist(), "x");
-
-                    // Layer one
                     productEdgeStartSet.add(newTailInt);
                     productEdgeEndSet.add(newHeadInt);
-                    productWeights.add(networkEdge.getDist());
-
-                    // Layer two
-                    productEdgeStartSet.add(newTailCopyInt);
-                    productEdgeEndSet.add(newHeadCopyInt);
                     productWeights.add(networkEdge.getDist());
 
                     // Track network edge's corresponding edges...
                     Integer networkTailInt = networkNodeToInt.get(networkTail);
                     Integer networkHeadInt = networkNodeToInt.get(networkHead);
 
+                    // First, get the hashed edge IDs
                     Long networkEdgeId = 
                         hash(networkTailInt, networkHeadInt);
 
-                    // First, Layer One:
                     Long productEdgeId = 
                         hash(newTailInt, newHeadInt);
 
@@ -153,16 +150,6 @@ public class InputReaderRLCSP {
                             networkEdgeId);
                         list.add(productEdgeId);
                     }
-
-                    // Then, Layer Two. We've already made sure the ArrayList
-                    // is there.
-                    Long productEdgeCopyId = 
-                        hash(newTailCopyInt, newHeadCopyInt);
-
-                    ArrayList<Long> list = correspondingEdges.get(
-                        networkEdgeId);
-                    list.add(productEdgeCopyId);
-
                 }
             }
         }
@@ -173,7 +160,7 @@ public class InputReaderRLCSP {
             Integer start = productEdgeStartSet.get(i);
             Integer end = productEdgeEndSet.get(i);
 
-            // set the cost of the edge as the -log of the edge weight
+            // Set the cost of the edge as the -log of the edge weight
             // log is the natural log by default
             double cost = (Math.log(productWeights.get(i)) * -1.0);
             productEdges[start].add(new Edge(end, cost));
@@ -182,28 +169,135 @@ public class InputReaderRLCSP {
             productEdgeCost.put(hash(start, end), cost);
         }
 
-        // TODO: Need to make sure to add super-source and super-sink edges to
-        // the network! This needs to be done after creating the network 
-        // itself. Any node that corresponds to both a network and a DFA source 
-        // node becomes a source node, and similarly for target nodes
+        ///////////////////////////////////////////////////////////////////////
+        // Add product sources and targets to the graph
+        // make the edges from the super source to each product node
 
+        ArrayList<String> networkSources = getSources(networkSourcesTargets);
+        ArrayList<String> dfaSources = getSources(dfaSourcesTargets);
+
+        ArrayList<String> productSources = 
+            getNodeProduct(networkSources, dfaSources);
+
+        for (String node: productSources) {
+            // Get the integer ID of the node. The integer ID of the 
+            // supersource is 0.
+            Integer id = productNodeToInt.get(node);
+
+            // Add edge FROM supersource TO source
+            productEdges[0].add(new Edge(id, .00000000000000001));
+
+            // Add edge FROM source TO supersource in the reverse graph
+            productReverseEdges[id].add(new Edge(0, .00000000000000001));
+
+            // Add edge cost
+            productEdgeCost.put(hash(0, id), .00000000000000001);
+        }
+
+        // Make edges from the product nodes to the super source node
+
+        ArrayList<String> networkTargets = getTargets(networkSourcesTargets);
+        ArrayList<String> dfaTargets = getTargets(dfaSourcesTargets);
+
+        ArrayList<String> productTargets = 
+            getNodeProduct(networkTargets, dfaTargets);
+        
+        for (String node: productTargets) {
+            // Get the integer ID of the node. The integer ID of the 
+            // supertarget is 1.
+            Integer id = productNodeToInt.get(node);
+           
+            productEdges[id].add(new Edge(1, .00000000000000001));
+
+            productReverseEdges[1].add(new Edge(id, .00000000000000001));
+
+            productEdgeCost.put(hash(id, 1), .00000000000000001);
+        }
+	}
+
+    // TODO: The code below could be refactored to be generic and iterate over
+    // a given file just once.
+
+    /**
+     * Read list of nodes specifying a generic network's source set from it's
+     * corresponding source-target file.
+     */
+	public ArrayList<String> getSources(File sourceTargetFile) 
+	        throws FileNotFoundException {
+	    ArrayList<String> sources = new ArrayList<String>();
+
+	    Scanner scanner = new Scanner(sourceTargetFile);
+
+	    while (scanner.hasNext()) {
+	        String node = scanner.next();
+	       
+	        // Skip comment lines
+	        if (node.startsWith("#")) {
+	            continue;
+	        }
+	        else {
+	            String nodeType = scanner.next();
+	            if (nodeType.equals(SOURCE_NODETYPE_LABEL)) {
+                    sources.add(node); 
+	            }
+	            else {
+                    // We don't care. Ignore.
+	            }
+	        }
+	        scanner.nextLine();
+	    }
+
+        return sources;
+	}
+
+    /**
+     * Read list of nodes specifying a generic network's target set from it's
+     * corresponding source-target file.
+     */
+	public ArrayList<String> getTargets(File sourceTargetFile) 
+	        throws FileNotFoundException {
+	    ArrayList<String> targets = new ArrayList<String>();
+
+	    Scanner scanner = new Scanner(sourceTargetFile);
+
+	    while (scanner.hasNext()) {
+	        String node = scanner.next();
+	       
+	        // Skip comment lines
+	        if (node.startsWith("#")) {
+	            continue;
+	        }
+	        else {
+	            String nodeType = scanner.next();
+	            if (nodeType.equals(TARGET_NODETYPE_LABEL)) {
+                    targets.add(node); 
+	            }
+	            else {
+                    // We don't care. Ignore.
+	            }
+	        }
+	        scanner.nextLine();
+	    }
+
+	    return targets;
 	}
 
     /** 
      * We'll ultimately be creating two copies of the graph.
      * This method reflects that by doubling the nodes and hashing them.
      */
-	public void hashNodes(
+	private void hashNodes(
 	        ArrayList<String> nodes, 
 	        HashMap<String, Integer> forwardHash, 
 	        HashMap<Integer, String> reverseHash) {
 
-        // First Copy 
-	    forwardHash.put("super source", 0);
-	    reverseHash.put(0, "super source");
+        // Super source
+	    forwardHash.put(SUPER_SOURCE_NAME, 0);
+	    reverseHash.put(0, SUPER_SOURCE_NAME);
 
-	    forwardHash.put("super target", 1);
-	    reverseHash.put(1, "super target");
+        // Super target
+	    forwardHash.put(SUPER_TARGET_NAME, 1);
+	    reverseHash.put(1, SUPER_TARGET_NAME);
 
 	    int index = 2;
 
@@ -212,27 +306,6 @@ public class InputReaderRLCSP {
 	        reverseHash.put(index, nodes.get(i));
 	        index++;
 	    }
-
-        // Second Copy
-	    forwardHash.put(duplicateNode("super source"), 0);
-	    reverseHash.put(0, duplicateNode("super source"));
-
-	    forwardHash.put(duplicateNode("super target"), 1);
-	    reverseHash.put(1, duplicateNode("super target"));
-
-	    for (int i = 0; i < nodes.size(); i++) {
-	        forwardHash.put(duplicateNode(nodes.get(i)), index);
-	        reverseHash.put(index, duplicateNode(nodes.get(i)));
-	        index++;
-	    }
-	}
-
-    /**
-     * Utility function for duplicating a node by adding a unique 
-     * String to its name.
-     */
-	public String duplicateNode(String name) {
-	    return name + "-2nd Copy";
 	}
 
     /**
@@ -323,6 +396,7 @@ public class InputReaderRLCSP {
                 scanner.nextLine();
                 continue;
             }
+
             String headNode = scanner.next();
             nodes.add(tailNode);
             nodes.add(headNode);
@@ -336,7 +410,7 @@ public class InputReaderRLCSP {
      * the product of the node sets.
      */
     public ArrayList<String> getNodeProduct(
-            HashSet<String> networkNodes, HashSet<String> dfaNodes) {
+            Iterable<String> networkNodes, Iterable<String> dfaNodes) {
         
         ArrayList<String> productNodes = new ArrayList<String>();
 
@@ -350,78 +424,11 @@ public class InputReaderRLCSP {
         return productNodes;
     }
 
+
     /**
-     * Perfect hash for edges.
+     * Perfect hash for up to 999,999,999 million edges.
      */
 	public static long hash(long startNode, long endNode) {
 		return startNode * 1000000000l + endNode;
 	}
 }
-
-    /*
-
-    public void AddStartEnd(String startEndFile, boolean startEndsPenalty, 
-            boolean verbose) throws IOException {
-		// Use these scanners to read files
-		startEnd = new Scanner(new File(startEndFile));
-		starts = new ArrayList<Integer>();
-		ends = new ArrayList<Integer>();
-        int num_sources = 0;
-        int num_targets = 0;
-		while (startEnd.hasNext()) {
-            // first column (start) contains the node name
-            // second column (end) contains either 'receptor' or 'tf
-			String nodeStr = startEnd.next();
-			// skip lines that are commented out like the header line
-			if (nodeStr.startsWith("#")){
-	            startEnd.nextLine();
-				continue;
-			}
-			String nodeTypeStr = startEnd.next();
-			// by default, the cost of a super-source or super-target edge is 0
-			double cost = .00000000000000001;
-			if (startEndsPenalty) {
-				cost = Double.parseDouble(startEnd.next());
-			}
-            // end of line. skip to next line
-            startEnd.nextLine();
-            if (mapToInt.containsKey(nodeTypeStr)) {
-                if (mapToInt.get(nodeTypeStr) == 0) {
-                    num_sources += 1;
-                }
-                else {
-                    num_targets += 1;
-                }
-            }
-			if (mapToInt.containsKey(nodeStr) && 
-			        mapToInt.containsKey(nodeTypeStr)) {
-
-                // start is the node name
-				int node = mapToInt.get(nodeStr);
-                // end is either 'receptor' or 'tf' 
-				int rec_or_tf = mapToInt.get(nodeTypeStr);
-
-                // 'receptor' was given the integer value 0, 'tf' was given a 1
-                // 'receptor' acts as the super source, 'tf' as the super target
-				if (rec_or_tf == 0) {
-                    // add an edge from "receptor" to the source (node)
-					edges[rec_or_tf].add(new Edge(node, cost));
-                    // add a reverse edge from the source to 'receptor'
-					reverseEdges[node].add(new Edge(rec_or_tf, cost));
-
-					edgeCost.put(hash(node, rec_or_tf), cost);
-                    starts.add(node);
-				} 
-				// or from the target (node) to "tf"
-				else {
-					edges[node].add(new Edge(rec_or_tf, cost));
-					reverseEdges[rec_or_tf].add(new Edge(node, cost));
-
-					edgeCost.put(hash(node, rec_or_tf), cost);
-                    ends.add(node);
-				}
-			}
-		}
-    }
-    
-	*/

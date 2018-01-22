@@ -151,8 +151,6 @@ public class InputReader {
 
     public void AddStartEnd(String startEndFile, boolean startEndsPenalty, 
             boolean verbose) throws IOException {
-		// Use these scanners to read files
-		//System.out.println(startEndFile);
 		startEnd = new Scanner(new File(startEndFile));
 		starts = new ArrayList<Integer>();
 		ends = new ArrayList<Integer>();
