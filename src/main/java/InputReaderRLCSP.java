@@ -47,6 +47,9 @@ public class InputReaderRLCSP {
     // the product graph
 	HashMap<Long, ArrayList<Long>> correspondingEdges;
 
+    // Suppressed because you can't have generic arrays in Java. There should
+    // be ways to get around this to remove this statement
+    @SuppressWarnings("unchecked")
 	public InputReaderRLCSP(File network, File networkSourcesTargets, 
 	        File dfa, File dfaSourcesTargets) 
 	        throws FileNotFoundException {
