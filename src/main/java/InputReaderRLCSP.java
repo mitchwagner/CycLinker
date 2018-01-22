@@ -62,6 +62,9 @@ public class InputReaderRLCSP {
         ArrayList<String> networkNodesList = 
             new ArrayList<String> (networkNodes);
 
+        networkNodeToInt = new HashMap<String, Integer>();
+        networkIntToNode = new HashMap<Integer, String>();
+
         hashNodes(networkNodesList, networkNodeToInt, networkIntToNode);
 
         ///////////////////////////////////////////////////////////////////////
@@ -72,10 +75,15 @@ public class InputReaderRLCSP {
 	    ArrayList<String> productNodes = 
 	        getNodeProduct(networkNodes, dfaNodes);
 
-        Integer numNodes = productNodes.size();
+        // Plus 2 for the super source and super target
+        Integer numNodes = productNodes.size() + 2;
 
         // Hash the product nodes. Actually creates two copies of product 
         // nodes, one for each half of the graph.
+    
+        productNodeToInt = new HashMap<String, Integer>();
+        productIntToNode = new HashMap<Integer, String>();
+
 	    hashNodes(productNodes, productNodeToInt, productIntToNode);
 
         // Read network and DFA edges
@@ -100,6 +108,9 @@ public class InputReaderRLCSP {
         //////////////////////////////////////////////////////////////////////
         // Creation of product edges
         // (u1, u2) -> (v1, v2) if (u1 -> u2 & v1 -> v2 & label same)
+
+        correspondingEdges = new HashMap<Long, ArrayList<Long>>();
+
         for (int i = 0; i < networkEdges.size(); i++) {
             EdgeRLCSP<String> networkEdge = networkEdges.get(i);
             for (int j = 0; j < dfaEdges.size(); j++) {
@@ -158,6 +169,8 @@ public class InputReaderRLCSP {
         }
 
         Integer numEdges = productWeights.size(); 
+
+        productEdgeCost = new HashMap<Long, Double>();
 
         for (int i = 0; i < numEdges; i++) {
             Integer start = productEdgeStartSet.get(i);
@@ -236,6 +249,7 @@ public class InputReaderRLCSP {
 	       
 	        // Skip comment lines
 	        if (node.startsWith("#")) {
+	            scanner.nextLine();
 	            continue;
 	        }
 	        else {
@@ -268,6 +282,7 @@ public class InputReaderRLCSP {
 	       
 	        // Skip comment lines
 	        if (node.startsWith("#")) {
+	            scanner.nextLine();
 	            continue;
 	        }
 	        else {

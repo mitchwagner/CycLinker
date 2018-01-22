@@ -314,13 +314,21 @@ public class Parser {
     public Options getOptions() {
         Options options = new Options();
 
+        // Required
         options.addOption(getNetworkOption());
         options.addOption(getNodeTypesOption());
         options.addOption(getOutPrefixOption());
+
+        // Optional
         options.addOption(getKLimitOption());
         options.addOption(getMultiRunOption());
         options.addOption(getEdgePenaltyOption());
         options.addOption(getSourceTargetPenaltyOption());
+
+        // RLCSP
+        options.addOption(getRLCSPOption());
+        options.addOption(getDFAOption());
+        options.addOption(getDFANodeTypesOption());
 
         return options;
     }
@@ -428,7 +436,7 @@ public class Parser {
      * TODO: Add JavaDoc
      */
     public Option getDFAOption() {
-        Option option = new Option("dfa", false,
+        Option option = new Option("dfa", true,
             "Labeled edgelist for DFA");
 
         return option;
@@ -438,7 +446,7 @@ public class Parser {
      * TODO: Add JavaDoc
      */
     public Option getDFANodeTypesOption() {
-        Option option = new Option("dfaNodeTypes", false,
+        Option option = new Option("dfaNodeTypes", true,
 		    "File specifying the nodes to use as sources and targets for" +
 		    "the DFA");
 

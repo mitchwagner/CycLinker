@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
 
+// TODO: This is not done yet. Needs:
+// 1) Debugging
+// 2) Sorting edge length for each corresponding edge and outputting
+
 public class AlgorithmRLCSP {
 	// These hashmaps map strings for proteins like "P04355" to integers, and
 	// vice versa
@@ -36,7 +40,7 @@ public class AlgorithmRLCSP {
 	StringBuilder edgeOutput;
 
     //maximum number of paths to write
-    int maxk;
+    long maxk;
 
 	public AlgorithmRLCSP(InputReaderRLCSP graph, long maxK) {
 		// set up our variables
@@ -53,7 +57,7 @@ public class AlgorithmRLCSP {
 		pathOutput = new StringBuilder();
 		edgeOutput = new StringBuilder();
 
-        this.maxk = maxk;
+        this.maxk = maxK;
 	}
 
 	public void run() {
@@ -65,6 +69,7 @@ public class AlgorithmRLCSP {
 		// Dijkstra's from the start, and the end.
 		// Stores the cost at from the start to all points.
 		final double[] startFromAllNodes = dijkstraFront(n, start, edges);
+
 		// Stores the cost from the end to all points.
 		final double[] endFromAllNodes = dijkstra(n, end, reverseEdges);
 
@@ -74,17 +79,19 @@ public class AlgorithmRLCSP {
 		// CriticalPath might be the same as another CriticalPath.
 		TreeSet<CriticalPath> potentialPaths = new TreeSet<CriticalPath>();
 		for (int a = 0; a < e; a++) {
+
 			// CriticalPath has 4 parts; Source -> edgeStart -> edgeEnd -> Sink
 			CriticalPath tempPath = new CriticalPath(edgeStartSet.get(a),
 					edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
 					edges);
+
 			potentialPaths.add(tempPath);
 		}
 
 		ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
 
 		// This was in pathlinker output so I do it as well
-		edgeOutput.append("#tail	head	KSP index\n"); 
+		edgeOutput.append("# Tail	Head	KSP Index	Path Cost\n"); 
 
 		int count2 = 0;
 		int countPath = 0;
@@ -92,27 +99,36 @@ public class AlgorithmRLCSP {
 		// This hashmap stores a blacklist of edges that have appeared on
 		// earlier paths
 		HashSet<Long> ReWriteThisWithEdgeClassLater = new HashSet<Long>();
-		// go through all of the potential paths.
+
+		// Go through all of the potential paths.
 		while (!potentialPaths.isEmpty()) {
 			count2++;
 			CriticalPath get = potentialPaths.first();
 			potentialPaths.remove(get);
+			
+			// Start node and end node here define an edge, not 
+			// for the path.
 			long startNode = get.startNode;
 			long endNode = get.endNode;
 			outputPaths.add(get);
 
-			// output the edge
+			// Output the edge
 			if (startNode != 0 && endNode != 1 && countPath < maxk) {
-			//if (startNode != 0 && endNode != 1) {
 				String outputEdge = reverseMap.get((int) startNode) + "\t"
-						+ reverseMap.get((int) endNode) + "\t" + count2;
+						+ reverseMap.get((int) endNode) + "\t" + count2 +
+						"\t" + get.totalCost;
 				edgeOutput.append(outputEdge + "\n");
 			}
 
-			// get the shortest path that uses that edge.
+			// Get the shortest path that uses that edge.
 			ArrayList<Integer> pathTemp = get.getPath();
 
-			// figure out if this 'criticaledge' is new
+            System.out.println(pathTemp.size());
+
+			// Figure out if this 'criticaledge' is new
+			// It can have been seen in an earlier critical path of the same
+			// length. We are figuring out if this critical edge is new in
+			// order to determine if we need to write a new path out.
 			boolean newEdge = false;
 			for (int b = 0; b < pathTemp.size() - 1; b++) {
 				long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
@@ -122,19 +138,51 @@ public class AlgorithmRLCSP {
 				}
 			}
 
-			// if it is new, output edge
 			if (newEdge && countPath < maxk) {
-			//if (newEdge) {
 				countPath++;
 				pathOutput.append(countPath + "\t"
 						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
 						+ getString(pathTemp, reverseMap) + "\n");
-		        //System.out.println(countPath);
             }
-
 		}
-
 	}
+
+	// I don't really want to change the output for the ranked paths, but I 
+	// want to change or supplement the output for the ranked edges. 
+
+    // Rather than output a1, b2, etc., I just want to output a, b, etc.
+    // When I pull an edge ((u, x), (v, y)) from the edgeset, it is guaranteed
+    // to be the shortest path containing any product edge corresponding to 
+    // (u, v).
+
+    // So, I can keep track of a blacklist of corresponding nodes as well.
+    // If the edge has had another (u, v) corresponding edge appear,
+
+    // Okay, let's define some terminology:
+    // (u,v) : parent edge
+    // ((u, x),(v, y)) : corresponding edge
+    // ((u, x),(v, y)) and ((u, a), (v, b)) are sibling edges.
+
+    // For each corresponding edge retrieved from the TreeSet above, look
+    // up its parent edge. If its parent edge has already appeared in the 
+    // parent edge blacklist, don't print the edge out. 
+
+    // This means inputReader will need one more hashmap: reverse corresponding 
+
+    // Is that useful, though?
+    // Yeah, I guess. It's going to be slightly incongruent with the output
+    // of the shortest paths themselves, because they'll still keep writing,
+    // but that output will just correspond to the shortest paths for H, not
+    // for G.
+
+
+
+
+
+
+
+
+
 
 	// Converts a list of node ID's to a list of node names.
 	// Ex: [123, 4123] -> "P03422|Q02312"
