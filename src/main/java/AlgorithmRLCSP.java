@@ -35,9 +35,19 @@ public class AlgorithmRLCSP {
 	int[] pathBackward;
 	final long INF = Long.MAX_VALUE;
 
+
+    // For projecting back to the original graph
+
+    HashMap<String, Integer> networkNodeToInt;
+    HashMap<Integer, String> networkIntToNode;
+    
+	HashMap<Long, ArrayList<Long>> correspondingEdges;
+	HashMap<Long, Long> correspondingEdgesReverse;
+
 	// Stores the output to pass to the outputWriter class.
 	StringBuilder pathOutput;
 	StringBuilder edgeOutput;
+	StringBuilder correspondingEdgeOutput;
 
     //maximum number of paths to write
     long maxk;
@@ -56,8 +66,18 @@ public class AlgorithmRLCSP {
 		edgeCost = graph.productEdgeCost;
 		pathOutput = new StringBuilder();
 		edgeOutput = new StringBuilder();
+		correspondingEdgeOutput = new StringBuilder();
 
-        this.maxk = maxK;
+        this.correspondingEdges =
+            graph.correspondingEdges;
+
+        this.correspondingEdgesReverse = 
+            graph.correspondingEdgesReverse;
+
+        networkNodeToInt = graph.networkNodeToInt;
+        networkIntToNode = graph.networkIntToNode;
+
+        maxk = maxK;
 	}
 
 	public void run() {
@@ -100,6 +120,8 @@ public class AlgorithmRLCSP {
 		// earlier paths
 		HashSet<Long> ReWriteThisWithEdgeClassLater = new HashSet<Long>();
 
+		HashSet<Long> correspondingEdgeBlacklist = new HashSet<Long>();
+
 		// Go through all of the potential paths.
 		while (!potentialPaths.isEmpty()) {
 			count2++;
@@ -120,10 +142,36 @@ public class AlgorithmRLCSP {
 				edgeOutput.append(outputEdge + "\n");
 			}
 
+
+            ///////////////////////////////////////////////////////////////////
+            // Projecting the product graph back to G. Remember, our goal here
+            // is to find the RLCSP path for an edge in G, not H.
+            if (startNode != 0 && endNode != 1 && countPath < maxk) {
+                // Get ID of the edge
+                long hash = hash(startNode, endNode);
+
+                // Get the parent edge from the original graph's ID
+                //System.out.println(correspondingEdgesReverse);
+                long correspondingEdge = correspondingEdgesReverse.get(hash);
+
+                // TODO: Should future-proof this or something, throw it in
+                // a method. If the hash function changes, this must change.
+                long startID = correspondingEdge / 1000000000l;
+                long endID = correspondingEdge % 1000000000l;
+
+                String startName = networkIntToNode.get((int)startID);
+                String endName = networkIntToNode.get((int)endID);
+
+                if (!correspondingEdgeBlacklist.contains(correspondingEdge)) {
+                    correspondingEdgeOutput.append(
+                        startName + "\t" + endName + "\n");
+                    correspondingEdgeBlacklist.add(correspondingEdge);
+                }
+            }
+
+
 			// Get the shortest path that uses that edge.
 			ArrayList<Integer> pathTemp = get.getPath();
-
-            System.out.println(pathTemp.size());
 
 			// Figure out if this 'criticaledge' is new
 			// It can have been seen in an earlier critical path of the same
@@ -137,6 +185,11 @@ public class AlgorithmRLCSP {
 					ReWriteThisWithEdgeClassLater.add(hash);
 				}
 			}
+
+
+
+
+
 
 			if (newEdge && countPath < maxk) {
 				countPath++;

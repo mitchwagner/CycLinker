@@ -44,8 +44,12 @@ public class InputReaderRLCSP {
 	HashMap<Long, Double> productEdgeCost;
 
     // Map edges in original network to corresponding edges in
-    // the product graph
+    // the product graph. One to many relationship.
 	HashMap<Long, ArrayList<Long>> correspondingEdges;
+
+	// Map edges in the product graph. Many to one relationship, hence no
+	// need for ArrayList as above
+	HashMap<Long, Long> correspondingEdgesReverse;
 
     // Suppressed because you can't have generic arrays in Java. There should
     // be ways to get around this to remove this statement
@@ -87,7 +91,8 @@ public class InputReaderRLCSP {
 	    hashNodes(productNodes, productNodeToInt, productIntToNode);
 
         // Read network and DFA edges
-        ArrayList<EdgeRLCSP<String>> networkEdges = getNetworkEdgeList(network);
+        ArrayList<EdgeRLCSP<String>> networkEdges = 
+            getNetworkEdgeList(network);
         ArrayList<EdgeRLCSP<String>> dfaEdges = getDFAEdgeList(dfa);
 
         
@@ -110,6 +115,7 @@ public class InputReaderRLCSP {
         // (u1, u2) -> (v1, v2) if (u1 -> u2 & v1 -> v2 & label same)
 
         correspondingEdges = new HashMap<Long, ArrayList<Long>>();
+        correspondingEdgesReverse = new HashMap<Long, Long>();
 
         for (int i = 0; i < networkEdges.size(); i++) {
             EdgeRLCSP<String> networkEdge = networkEdges.get(i);
@@ -164,6 +170,8 @@ public class InputReaderRLCSP {
                             networkEdgeId);
                         list.add(productEdgeId);
                     }
+                    correspondingEdgesReverse.put(
+                        productEdgeId, networkEdgeId);
                 }
             }
         }

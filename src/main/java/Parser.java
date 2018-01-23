@@ -53,16 +53,21 @@ public class Parser {
             
             PrintWriter edgeWriter;
             PrintWriter pathWriter;
+            PrintWriter projectionWriter;
 
 		    String prefix= cmd.getOptionValue("out-prefix");
+
             edgeWriter = new PrintWriter(prefix + "-ranked-edges.txt");
             pathWriter = new PrintWriter(prefix + "-paths.txt");
+            projectionWriter = new PrintWriter(prefix + "-projection.txt");
 
             edgeWriter.append(execute.edgeOutput);
             pathWriter.append(execute.pathOutput);
+            projectionWriter.append(execute.correspondingEdgeOutput);
 
             edgeWriter.close();
             pathWriter.close();
+            projectionWriter.close();
         }
         else {
             InputReader input = readGraphFromParams(cmd);
