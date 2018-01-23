@@ -81,6 +81,8 @@ public class InputReaderRLCSP {
 
         // Plus 2 for the super source and super target
         Integer numNodes = productNodes.size() + 2;
+        System.out.println("Number of nodes in the product graph: " + 
+            numNodes.toString()); 
 
         // Hash the product nodes. Actually creates two copies of product 
         // nodes, one for each half of the graph.
@@ -127,11 +129,16 @@ public class InputReaderRLCSP {
                     // Determine the edge's product head and tail nodes
                     String networkTail = networkEdge.getTail();
                     String dfaTail = dfaEdge.getTail();
-                    String newTail = networkTail + dfaTail;
+
+                    // Create a new node. Use <> to delimit old and new nodes
+                    // to avoid problems like TF2 and TF and nodes 1 and 21
+                    // BOTH creating compound nodes like TF21
+                    // TODO: Abstract this out into a function...
+                    String newTail = networkTail + "<>" + dfaTail;
 
                     String networkHead = networkEdge.getHead();
                     String dfaHead = dfaEdge.getHead();
-                    String newHead = networkHead + dfaHead;
+                    String newHead = networkHead + "<>" + dfaHead;
 
                     // At this point, the new head and tail nodes should be
                     // product nodes in our hashes. Get their Integer IDs.
@@ -442,7 +449,7 @@ public class InputReaderRLCSP {
 
         for (String networkNode : networkNodes) {
             for (String dfaNode : dfaNodes) {
-                String product = networkNode + dfaNode;
+                String product = networkNode + "<>" + dfaNode;
                 productNodes.add(product);
             }
         }
