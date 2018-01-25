@@ -122,6 +122,8 @@ public class AlgorithmRLCSP {
 
 		HashSet<Long> correspondingEdgeBlacklist = new HashSet<Long>();
 
+        double lastcost = 0;
+        long rank = 0;
 		// Go through all of the potential paths.
 		while (!potentialPaths.isEmpty()) {
 			count2++;
@@ -163,8 +165,17 @@ public class AlgorithmRLCSP {
                 String endName = networkIntToNode.get((int)endID);
 
                 if (!correspondingEdgeBlacklist.contains(correspondingEdge)) {
+                    if (lastcost == get.totalCost) {
+                        // Don't do anything
+                    }
+                    else {
+                        rank++;
+                        lastcost = get.totalCost;
+                    }
+
                     correspondingEdgeOutput.append(
-                        startName + "\t" + endName + "\n");
+                        startName + "\t" + endName + "\t" + 
+                        rank + "\n");
                     correspondingEdgeBlacklist.add(correspondingEdge);
                 }
             }
@@ -185,11 +196,6 @@ public class AlgorithmRLCSP {
 					ReWriteThisWithEdgeClassLater.add(hash);
 				}
 			}
-
-
-
-
-
 
 			if (newEdge && countPath < maxk) {
 				countPath++;
@@ -227,15 +233,6 @@ public class AlgorithmRLCSP {
     // of the shortest paths themselves, because they'll still keep writing,
     // but that output will just correspond to the shortest paths for H, not
     // for G.
-
-
-
-
-
-
-
-
-
 
 	// Converts a list of node ID's to a list of node names.
 	// Ex: [123, 4123] -> "P03422|Q02312"
