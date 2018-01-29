@@ -269,7 +269,8 @@ public class InputReaderRLCSP {
 	        }
 	        else {
 	            String nodeType = scanner.next();
-	            if (nodeType.equals(SOURCE_NODETYPE_LABEL)) {
+	            if (nodeType.equals(SOURCE_NODETYPE_LABEL) || 
+	                nodeType.equals("receptor")) {
                     sources.add(node); 
 	            }
 	            else {
@@ -302,7 +303,8 @@ public class InputReaderRLCSP {
 	        }
 	        else {
 	            String nodeType = scanner.next();
-	            if (nodeType.equals(TARGET_NODETYPE_LABEL)) {
+	            if (nodeType.equals(TARGET_NODETYPE_LABEL) ||
+	                nodeType.equals("tf")) {
                     targets.add(node); 
 	            }
 	            else {
