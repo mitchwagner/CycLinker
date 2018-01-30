@@ -57,7 +57,7 @@ public class InputReaderRLCSP {
 	public InputReaderRLCSP(File network, File networkSourcesTargets, 
 	        File dfa, File dfaSourcesTargets) 
 	        throws FileNotFoundException {
-
+        
         ///////////////////////////////////////////////////////////////////////
         // Read nodes from the original network
 	    HashSet<String> networkNodes = getNodeList(network);
@@ -215,14 +215,17 @@ public class InputReaderRLCSP {
             // supersource is 0.
             Integer id = productNodeToInt.get(node);
 
-            // Add edge FROM supersource TO source
-            productEdges[0].add(new Edge(id, .00000000000000001));
+            // If the source is actually in the edgelist...
+            if (id != null) {
+                // Add edge FROM supersource TO source
+                productEdges[0].add(new Edge(id, .00000000000000001));
 
-            // Add edge FROM source TO supersource in the reverse graph
-            productReverseEdges[id].add(new Edge(0, .00000000000000001));
+                // Add edge FROM source TO supersource in the reverse graph
+                productReverseEdges[id].add(new Edge(0, .00000000000000001));
 
-            // Add edge cost
-            productEdgeCost.put(hash(0, id), .00000000000000001);
+                // Add edge cost
+                productEdgeCost.put(hash(0, id), .00000000000000001);
+            }
         }
 
         // Make edges from the product nodes to the super source node
@@ -237,12 +240,15 @@ public class InputReaderRLCSP {
             // Get the integer ID of the node. The integer ID of the 
             // supertarget is 1.
             Integer id = productNodeToInt.get(node);
+
+            if (id != null) {
            
-            productEdges[id].add(new Edge(1, .00000000000000001));
+                productEdges[id].add(new Edge(1, .00000000000000001));
 
-            productReverseEdges[1].add(new Edge(id, .00000000000000001));
+                productReverseEdges[1].add(new Edge(id, .00000000000000001));
 
-            productEdgeCost.put(hash(id, 1), .00000000000000001);
+                productEdgeCost.put(hash(id, 1), .00000000000000001);
+            }
         }
 	}
 
