@@ -49,7 +49,7 @@ public class Parser {
             long maxk = getKfromCommandLine(cmd);
             
             long threshold = 1000;
-            if cmd.hasOption("threshold") {
+            if (cmd.hasOption("threshold")) {
                 System.out.print(   
                     "Not implemented: still using default of 1000");
             }
