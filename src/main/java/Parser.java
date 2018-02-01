@@ -47,7 +47,14 @@ public class Parser {
             InputReaderRLCSP input = readGraphFromParamsRLCSP(cmd);
 
             long maxk = getKfromCommandLine(cmd);
-            AlgorithmRLCSP execute = new AlgorithmRLCSP(input, maxk);
+            
+            long threshold = 1000;
+            if cmd.hasOption("threshold") {
+                System.out.print(   
+                    "Not implemented: still using default of 1000");
+            }
+
+            AlgorithmRLCSP execute = new AlgorithmRLCSP(input, maxk, threshold);
 
             execute.run();
             
@@ -334,6 +341,7 @@ public class Parser {
         options.addOption(getRLCSPOption());
         options.addOption(getDFAOption());
         options.addOption(getDFANodeTypesOption());
+        options.addOption(getThresholdOption());
 
         return options;
     }
@@ -443,6 +451,16 @@ public class Parser {
     public Option getDFAOption() {
         Option option = new Option("dfa", true,
             "Labeled edgelist for DFA");
+
+        return option;
+    }
+
+    /**
+     * TODO: Add JavaDoc
+     */
+    public Option getThresholdOption() {
+        Option option = new Option("threshold", true,
+            "RLCSP path threshold");
 
         return option;
     }

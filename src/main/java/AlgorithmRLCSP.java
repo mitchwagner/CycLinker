@@ -51,8 +51,11 @@ public class AlgorithmRLCSP {
 
     //maximum number of paths to write
     long maxk;
+    long threshold;
 
-	public AlgorithmRLCSP(InputReaderRLCSP graph, long maxK) {
+	public AlgorithmRLCSP(InputReaderRLCSP graph, long maxK, long threshold) {
+        this.threshold = threshold;
+	    
 		// set up our variables
 		mapToInt = graph.productNodeToInt;
 		reverseMap = graph.productIntToNode;
@@ -136,74 +139,76 @@ public class AlgorithmRLCSP {
 			long endNode = get.endNode;
 			outputPaths.add(get);
 
-			// Output the edge
-			if (startNode != 0 && endNode != 1 && countPath < maxk) {
-				String outputEdge = reverseMap.get((int) startNode) + "\t"
-						+ reverseMap.get((int) endNode) + "\t" + count2 +
-						"\t" + get.totalCost;
-				edgeOutput.append(outputEdge + "\n");
-			}
+			if (get.totalCost < this.threshold) {
 
+                // Output the edge
+                if (startNode != 0 && endNode != 1 && countPath < maxk) {
+                    String outputEdge = reverseMap.get((int) startNode) + "\t"
+                            + reverseMap.get((int) endNode) + "\t" + count2 +
+                            "\t" + get.totalCost;
+                    edgeOutput.append(outputEdge + "\n");
+                }
 
-            ///////////////////////////////////////////////////////////////////
-            // Projecting the product graph back to G. Remember, our goal here
-            // is to find the RLCSP path for an edge in G, not H.
-            if (startNode != 0 && endNode != 1 && countPath < maxk) {
-                // Get ID of the edge
-                long hash = hash(startNode, endNode);
+                ///////////////////////////////////////////////////////////////////
+                // Projecting the product graph back to G. Remember, our goal here
+                // is to find the RLCSP path for an edge in G, not H.
+                if (startNode != 0 && endNode != 1 && countPath < maxk) {
+                    // Get ID of the edge
+                    long hash = hash(startNode, endNode);
 
-                // Get the parent edge from the original graph's ID
-                //System.out.println(correspondingEdgesReverse);
-                long correspondingEdge = correspondingEdgesReverse.get(hash);
+                    // Get the parent edge from the original graph's ID
+                    //System.out.println(correspondingEdgesReverse);
+                    long correspondingEdge = correspondingEdgesReverse.get(hash);
 
-                // TODO: Should future-proof this or something, throw it in
-                // a method. If the hash function changes, this must change.
-                long startID = correspondingEdge / 1000000000l;
-                long endID = correspondingEdge % 1000000000l;
+                    // TODO: Should future-proof this or something, throw it in
+                    // a method. If the hash function changes, this must change.
+                    long startID = correspondingEdge / 1000000000l;
+                    long endID = correspondingEdge % 1000000000l;
 
-                String startName = networkIntToNode.get((int)startID);
-                String endName = networkIntToNode.get((int)endID);
+                    String startName = networkIntToNode.get((int)startID);
+                    String endName = networkIntToNode.get((int)endID);
 
-                if (!correspondingEdgeBlacklist.contains(correspondingEdge)) {
-                    if (lastcost == get.totalCost) {
-                        // Don't do anything
+                    if (!correspondingEdgeBlacklist.contains(correspondingEdge)) {
+                        if (lastcost == get.totalCost) {
+                            // Don't do anything
+                        }
+                        else {
+                            rank++;
+                            lastcost = get.totalCost;
+                        }
+
+                        correspondingEdgeOutput.append(
+                            startName + "\t" + endName + "\t" + 
+                            rank + "\n");
+                        correspondingEdgeBlacklist.add(correspondingEdge);
                     }
-                    else {
-                        rank++;
-                        lastcost = get.totalCost;
-                    }
+                }
 
-                    correspondingEdgeOutput.append(
-                        startName + "\t" + endName + "\t" + 
-                        rank + "\n");
-                    correspondingEdgeBlacklist.add(correspondingEdge);
+
+                // Get the shortest path that uses that edge.
+                ArrayList<Integer> pathTemp = get.getPath();
+
+                // Figure out if this 'criticaledge' is new
+                // It can have been seen in an earlier critical path of the same
+                // length. We are figuring out if this critical edge is new in
+                // order to determine if we need to write a new path out.
+                boolean newEdge = false;
+                for (int b = 0; b < pathTemp.size() - 1; b++) {
+                    long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
+                    if (!ReWriteThisWithEdgeClassLater.contains(hash)) {
+                        newEdge = true;
+                        ReWriteThisWithEdgeClassLater.add(hash);
+                    }
+                }
+
+                if (newEdge && countPath < maxk) {
+                    countPath++;
+                    pathOutput.append(countPath + "\t"
+                            + Math.pow(Math.E, -1 * get.totalCost) + "\t"
+                            + getString(pathTemp, reverseMap) + "\n");
                 }
             }
-
-
-			// Get the shortest path that uses that edge.
-			ArrayList<Integer> pathTemp = get.getPath();
-
-			// Figure out if this 'criticaledge' is new
-			// It can have been seen in an earlier critical path of the same
-			// length. We are figuring out if this critical edge is new in
-			// order to determine if we need to write a new path out.
-			boolean newEdge = false;
-			for (int b = 0; b < pathTemp.size() - 1; b++) {
-				long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
-				if (!ReWriteThisWithEdgeClassLater.contains(hash)) {
-					newEdge = true;
-					ReWriteThisWithEdgeClassLater.add(hash);
-				}
-			}
-
-			if (newEdge && countPath < maxk) {
-				countPath++;
-				pathOutput.append(countPath + "\t"
-						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
-						+ getString(pathTemp, reverseMap) + "\n");
-            }
-		}
+        }
 	}
 
 	// I don't really want to change the output for the ranked paths, but I 

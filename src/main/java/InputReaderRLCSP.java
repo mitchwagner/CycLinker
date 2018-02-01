@@ -95,7 +95,11 @@ public class InputReaderRLCSP {
         // Read network and DFA edges
         ArrayList<EdgeRLCSP<String>> networkEdges = 
             getNetworkEdgeList(network);
+
+        System.out.println("Network edge count: " + networkEdges.size());
+
         ArrayList<EdgeRLCSP<String>> dfaEdges = getDFAEdgeList(dfa);
+        System.out.println("DFA edge count: " + dfaEdges.size());
 
         
         ///////////////////////////////////////////////////////////////////////
@@ -119,6 +123,8 @@ public class InputReaderRLCSP {
         correspondingEdges = new HashMap<Long, ArrayList<Long>>();
         correspondingEdgesReverse = new HashMap<Long, Long>();
 
+        Integer productEdgesCounter = 0;
+
         for (int i = 0; i < networkEdges.size(); i++) {
             EdgeRLCSP<String> networkEdge = networkEdges.get(i);
             for (int j = 0; j < dfaEdges.size(); j++) {
@@ -126,6 +132,7 @@ public class InputReaderRLCSP {
 
                 // If our label is the same, create the edge
                 if (networkEdge.labelMatches(dfaEdge)) {
+                    productEdgesCounter++;
                     // Determine the edge's product head and tail nodes
                     String networkTail = networkEdge.getTail();
                     String dfaTail = dfaEdge.getTail();
@@ -182,6 +189,7 @@ public class InputReaderRLCSP {
                 }
             }
         }
+        System.out.println("Product graph edges: " + productEdgesCounter);
 
         Integer numEdges = productWeights.size(); 
 
