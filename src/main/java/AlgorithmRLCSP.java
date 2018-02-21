@@ -145,7 +145,7 @@ public class AlgorithmRLCSP {
                 if (startNode != 0 && endNode != 1 && countPath < maxk) {
                     String outputEdge = reverseMap.get((int) startNode) + "\t"
                             + reverseMap.get((int) endNode) + "\t" + count2 +
-                            "\t" + get.totalCost;
+                            "\t" + Math.pow(Math.E, -1 * get.totalCost);
                     edgeOutput.append(outputEdge + "\n");
                 }
 
@@ -179,7 +179,9 @@ public class AlgorithmRLCSP {
 
                         correspondingEdgeOutput.append(
                             startName + "\t" + endName + "\t" + 
-                            rank + "\n");
+                            rank + "\t" + 
+                            Math.pow(Math.E, -1 * get.totalCost) + "\n");
+
                         correspondingEdgeBlacklist.add(correspondingEdge);
                     }
                 }
