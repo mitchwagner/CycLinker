@@ -4,6 +4,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
 
+import java.util.Scanner;
+import java.io.File;
+import java.io.FileNotFoundException;
+
 // TODO: This is not done yet. Needs:
 // 1) Debugging
 // 2) Sorting edge length for each corresponding edge and outputting
@@ -83,7 +87,23 @@ public class AlgorithmRLCSP {
         maxk = maxK;
 	}
 
-	public void run() {
+	public ArrayList<EdgeRLCSP<String>> readEdgesToCompute(File f) 
+	        throws FileNotFoundException {
+	    ArrayList<EdgeRLCSP<String>> list = new ArrayList<EdgeRLCSP<String>>();
+	    Scanner scanner = new Scanner(f);
+
+	    while (scanner.hasNext()) {
+	        String tail = scanner.next();
+	        String head = scanner.next();
+	        EdgeRLCSP<String> edge = new EdgeRLCSP<String>(tail, head);
+	        list.add(edge);
+	        scanner.nextLine();
+	    }
+
+	    return list;
+	}
+
+	public void run(String edgesToComputeFile) throws FileNotFoundException {
 		int start = 0; // super source = 0
 		int end = 1; // super sink = 1
 		int n = mapToInt.size(); // number of nodes
@@ -101,15 +121,59 @@ public class AlgorithmRLCSP {
 		// A critical path does not contain only redundant edges. However, a
 		// CriticalPath might be the same as another CriticalPath.
 		TreeSet<CriticalPath> potentialPaths = new TreeSet<CriticalPath>();
-		for (int a = 0; a < e; a++) {
 
-			// CriticalPath has 4 parts; Source -> edgeStart -> edgeEnd -> Sink
-			CriticalPath tempPath = new CriticalPath(edgeStartSet.get(a),
-					edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
-					edges);
+        
+        if (edgesToComputeFile == "") {
+            for (int a = 0; a < e; a++) {
 
-			potentialPaths.add(tempPath);
-		}
+                // CriticalPath has 4 parts; Source -> edgeStart -> edgeEnd ->
+                // Sink
+                CriticalPath tempPath = new CriticalPath(edgeStartSet.get(a),
+                        edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
+                        edges);
+
+                potentialPaths.add(tempPath);
+            }
+        }
+        else {
+            ArrayList<EdgeRLCSP<String>> edgesToCareAbout = 
+                readEdgesToCompute(new File(edgesToComputeFile));
+
+            // Currently no choice but to loop over all product edges
+            for (int a = 0; a < e; a++) {
+                Integer tail = edgeStartSet.get(a);
+                Integer head = edgeEndSet.get(a);
+
+                String productTailString = networkIntToNode.get(tail);
+                String productHeadString = networkIntToNode.get(head);
+
+                // Loop over all the edges that we actually care about
+                for (EdgeRLCSP<String> edge : edgesToCareAbout) {
+                    String tailString = edge.getTail();
+                    String headString = edge.getHead();
+                    
+                    // If we care about it, add it
+                    if (productTailString.contains(tailString) &&
+                        productHeadString.contains(headString)) {
+
+                        CriticalPath tempPath = new CriticalPath(
+                            edgeStartSet.get(a),
+                            edgeEndSet.get(a), 
+                            startFromAllNodes, 
+                            endFromAllNodes,
+                            edges);
+                        
+                        potentialPaths.add(tempPath);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+
+
+
 
 		ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
 

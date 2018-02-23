@@ -56,7 +56,13 @@ public class Parser {
 
             AlgorithmRLCSP execute = new AlgorithmRLCSP(input, maxk, threshold);
 
-            execute.run();
+            if (cmd.hasOption("edgesToCompute")) {
+                execute.run(cmd.getOptionValue("edgesToCompute")); 
+            }
+            else {
+                execute.run("");
+            }
+
             
             PrintWriter edgeWriter;
             PrintWriter pathWriter;
@@ -336,6 +342,7 @@ public class Parser {
         options.addOption(getMultiRunOption());
         options.addOption(getEdgePenaltyOption());
         options.addOption(getSourceTargetPenaltyOption());
+        options.addOption(getEdgesToComputeOption());
 
         // RLCSP
         options.addOption(getRLCSPOption());
@@ -456,11 +463,11 @@ public class Parser {
     }
 
     /**
-     * TODO: Add JavaDoc
+     * todo: add javadoc
      */
     public Option getThresholdOption() {
         Option option = new Option("threshold", true,
-            "RLCSP path threshold");
+            "rlcsp path score threshold.");
 
         return option;
     }
@@ -474,7 +481,18 @@ public class Parser {
 		    "the DFA");
 
         return option;
-    }
+     }
+
+    /**
+     * TODO: Add JavaDoc
+     */
+    public Option getEdgesToComputeOption() {
+        Option option = new Option("edgesToCompute", false,
+		    "Tab-delimited file containing list of edges to " +
+		    "compute paths for");
+
+        return option;
+     }
 
     /**
      * TODO: Add JavaDoc
