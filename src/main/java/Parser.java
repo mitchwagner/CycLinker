@@ -57,12 +57,14 @@ public class Parser {
             AlgorithmRLCSP execute = new AlgorithmRLCSP(input, maxk, threshold);
 
             if (cmd.hasOption("edgesToCompute")) {
+                System.out.println("got here");
+                System.out.println(cmd.getOptionValue("edgesToCompute"));
                 execute.run(cmd.getOptionValue("edgesToCompute")); 
             }
             else {
+                System.out.println("got here instead");
                 execute.run("");
             }
-
             
             PrintWriter edgeWriter;
             PrintWriter pathWriter;
@@ -487,7 +489,7 @@ public class Parser {
      * TODO: Add JavaDoc
      */
     public Option getEdgesToComputeOption() {
-        Option option = new Option("edgesToCompute", false,
+        Option option = new Option("edgesToCompute", true,
 		    "Tab-delimited file containing list of edges to " +
 		    "compute paths for");
 

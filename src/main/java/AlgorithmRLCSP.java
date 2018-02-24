@@ -104,6 +104,9 @@ public class AlgorithmRLCSP {
 	}
 
 	public void run(String edgesToComputeFile) throws FileNotFoundException {
+
+	    System.out.println(edgesToComputeFile);
+
 		int start = 0; // super source = 0
 		int end = 1; // super sink = 1
 		int n = mapToInt.size(); // number of nodes
@@ -144,8 +147,8 @@ public class AlgorithmRLCSP {
                 Integer tail = edgeStartSet.get(a);
                 Integer head = edgeEndSet.get(a);
 
-                String productTailString = networkIntToNode.get(tail);
-                String productHeadString = networkIntToNode.get(head);
+                String productTailString = reverseMap.get(tail);
+                String productHeadString = reverseMap.get(head);
 
                 // Loop over all the edges that we actually care about
                 for (EdgeRLCSP<String> edge : edgesToCareAbout) {
@@ -162,9 +165,19 @@ public class AlgorithmRLCSP {
                             startFromAllNodes, 
                             endFromAllNodes,
                             edges);
-                        
+                        CriticalPath tempPath = new CriticalPath(
+                            edgeStartSet.get(a),
+                            edgeEndSet.get(a), 
+                            startFromAllNodes, 
+                            endFromAllNodes,
+                            edges);
+
                         potentialPaths.add(tempPath);
+                        
                         break;
+                    }
+                    else {
+                        // Do nothing
                     }
                 }
             }
