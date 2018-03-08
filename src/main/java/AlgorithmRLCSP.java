@@ -220,36 +220,54 @@ public class AlgorithmRLCSP {
                 // Projecting the product graph back to G. Remember, our goal here
                 // is to find the RLCSP path for an edge in G, not H.
                 if (startNode != 0 && endNode != 1 && countPath < maxk) {
-                    // Get ID of the edge
-                    long hash = hash(startNode, endNode);
+                 
+                    if (lastcost == get.totalCost) {
+                        // Don't do anything
+                    }
+                    else {
+                        rank++;
+                        lastcost = get.totalCost;
+                    }
+                    
+                    // TODO: This is a hack that could be made more efficient
+                    ArrayList<Integer> pathTemp = get.getPath();
+                    for (int b = 0; b < pathTemp.size() - 1; b++) {
+                        long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
 
-                    // Get the parent edge from the original graph's ID
-                    //System.out.println(correspondingEdgesReverse);
-                    long correspondingEdge = correspondingEdgesReverse.get(hash);
+                        // Get the parent edge from the original graph's ID
+                        Long correspondingEdge = 
+                            correspondingEdgesReverse.get(hash);
 
-                    // TODO: Should future-proof this or something, throw it in
-                    // a method. If the hash function changes, this must change.
-                    long startID = correspondingEdge / 1000000000l;
-                    long endID = correspondingEdge % 1000000000l;
+                        // Not every edge in the critical path will have
+                        // a corresponding edge because of super source/sink
+                        // edges
+                        if (correspondingEdge != null) {
+                            // TODO: Should future-proof this or something,
+                            // throw it in a method. If the hash function
+                            // changes, this must change.
+                            long startID = correspondingEdge / 1000000000l;
+                            long endID = correspondingEdge % 1000000000l;
 
-                    String startName = networkIntToNode.get((int)startID);
-                    String endName = networkIntToNode.get((int)endID);
+                            String startName = 
+                                networkIntToNode.get((int)startID);
 
-                    if (!correspondingEdgeBlacklist.contains(correspondingEdge)) {
-                        if (lastcost == get.totalCost) {
-                            // Don't do anything
+                            String endName = 
+                                networkIntToNode.get((int)endID);
+
+                            if (!correspondingEdgeBlacklist.contains(
+                                correspondingEdge)) {
+
+                                correspondingEdgeOutput.append(
+                                    startName + "\t"
+                                    + endName + "\t"
+                                    + rank + "\t"
+                                    + Math.pow(Math.E, -1 * get.totalCost)
+                                    + "\n");
+
+                                correspondingEdgeBlacklist.add(
+                                    correspondingEdge);
+                            }
                         }
-                        else {
-                            rank++;
-                            lastcost = get.totalCost;
-                        }
-
-                        correspondingEdgeOutput.append(
-                            startName + "\t" + endName + "\t" + 
-                            rank + "\t" + 
-                            Math.pow(Math.E, -1 * get.totalCost) + "\n");
-
-                        correspondingEdgeBlacklist.add(correspondingEdge);
                     }
                 }
 
