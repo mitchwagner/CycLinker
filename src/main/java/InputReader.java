@@ -129,8 +129,9 @@ public class InputReader {
 			int end = edgeEndSet.get(i);
             // set the cost of the edge as the -log of the edge weight
             // log is the natural log by default
-			double cost = (Math.log(weights.get(i)) * -1.0);
-            if (cost <= 0){
+            double cost = (Math.log(weights.get(i)) * -1.0);
+
+            if (cost < 0){
                 System.out.println("Error: invalid weight for edge " + 
                     reverseMap.get(start) + "->" + reverseMap.get(end) + 
                     ": " + weights.get(i));

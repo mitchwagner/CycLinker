@@ -5,58 +5,57 @@ import java.util.HashSet;
 import java.util.TreeSet;
 
 public class Algorithm {
-	// These hashmaps map strings for proteins like "P04355" to integers, and
-	// vice versa
-	// Overflow warning: These integers should never be multiplied, without
-	// converting to longs.
-	HashMap<String, Integer> mapToInt;
-	HashMap<Integer, String> reverseMap;
+    // These hashmaps map strings for proteins like "P04355" to integers, and
+    // vice versa
+    // Overflow warning: These integers should never be multiplied, without
+    // converting to longs.
+    HashMap<String, Integer> mapToInt;
+    HashMap<Integer, String> reverseMap;
 
-	// Map of edge number to the edge start point and end point, as well as
-	// cost. (order of file read)
-	ArrayList<Integer> edgeEndSet;
-	ArrayList<Integer> edgeStartSet;
-	ArrayList<Double> weights;
-	ArrayList<Edge>[] edges;
-	ArrayList<Edge>[] reverseEdges;
+    // Map of edge number to the edge start point and end point, as well as
+    // cost. (order of file read)
+    ArrayList<Integer> edgeEndSet;
+    ArrayList<Integer> edgeStartSet;
+    ArrayList<Double> weights;
+    ArrayList<Edge>[] edges;
+    ArrayList<Edge>[] reverseEdges;
 
-	// Negative log transform map of edge costs.
-	// Key for edge is a perfect hash of the start and end point. (use given
-	// function. Works for up to 999,999,999 nodes)
-	HashMap<Long, Double> edgeCost;
+    // Negative log transform map of edge costs.
+    // Key for edge is a perfect hash of the start and end point. (use given
+    // function. Works for up to 999,999,999 nodes)
+    HashMap<Long, Double> edgeCost;
 
-	// Used internally in dijkstra's, and in CriticalPath for path printing.
-	// Stores the dijkstra's path in symbolic tree form.
-	int[] pathForward;
-	int[] pathBackward;
-	final long INF = Long.MAX_VALUE;
+    // Used internally in dijkstra's, and in CriticalPath for path printing.
+    // Stores the dijkstra's path in symbolic tree form.
+    int[] pathForward;
+    int[] pathBackward;
+    final long INF = Long.MAX_VALUE;
 
-	// Stores the output to pass to the outputWriter class.
-	StringBuilder pathOutput;
-	StringBuilder edgeOutput;
+    // Stores the output to pass to the outputWriter class.
+    StringBuilder pathOutput;
+    StringBuilder edgeOutput;
 
     //maximum number of paths to write
     long maxk;
 
-	public Algorithm(InputReader graph, long maxK) {
-		// set up our variables
-		mapToInt = graph.mapToInt;
-		reverseMap = graph.reverseMap;
+    public Algorithm(InputReader graph, long maxK) {
+        // set up our variables
+        mapToInt = graph.mapToInt;
+        reverseMap = graph.reverseMap;
 
-		edgeEndSet = graph.edgeEndSet;
-		edgeStartSet = graph.edgeStartSet;
-		weights = graph.weights;
-		edges = graph.edges;
-		reverseEdges = graph.reverseEdges;
+        edgeEndSet = graph.edgeEndSet;
+        edgeStartSet = graph.edgeStartSet;
+        weights = graph.weights;
+        edges = graph.edges;
+        reverseEdges = graph.reverseEdges;
 
-		edgeCost = graph.edgeCost;
-		pathOutput = new StringBuilder();
-		edgeOutput = new StringBuilder();
+        edgeCost = graph.edgeCost;
+        pathOutput = new StringBuilder();
+        edgeOutput = new StringBuilder();
 
         //maxk = graph.maxk;
         this.maxk = maxK;
-        System.out.println(maxk);
-	}
+    }
 
 	public void run() {
 		int start = 0; // super source = 0
@@ -70,9 +69,9 @@ public class Algorithm {
 		// Stores the cost from the end to all points.
 		final double[] endFromAllNodes = dijkstra(n, end, reverseEdges);
 
-        for (int i = 0; i < startFromAllNodes.length; i++) {
-            System.out.println(startFromAllNodes[i]);
-        }
+        //for (int i = 0; i < startFromAllNodes.length; i++) {
+        //    System.out.println(startFromAllNodes[i]);
+        //}
 
 		// Each edge has a shortest path; We will denote this as a
 		// 'CriticalPath'.
@@ -85,7 +84,6 @@ public class Algorithm {
 					edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
 					edges);
 			potentialPaths.add(tempPath);
-			System.out.println(tempPath);
 		}
 
 		ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
@@ -108,10 +106,8 @@ public class Algorithm {
 			long endNode = get.endNode;
 			outputPaths.add(get);
 
-            System.out.println(maxk);
 			// output the edge
 			if (startNode != 0 && endNode != 1 && countPath < maxk) {
-			    System.out.println("got here");
 			//if (startNode != 0 && endNode != 1) {
 				String outputEdge = reverseMap.get((int) startNode) + "\t"
 						+ reverseMap.get((int) endNode) + "\t" + count2;
@@ -138,12 +134,9 @@ public class Algorithm {
 				pathOutput.append(countPath + "\t"
 						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
 						+ getString(pathTemp, reverseMap) + "\n");
-		        System.out.println(countPath);
             }
 
 		}
-		System.out.println(edgeOutput);
-		System.out.println(pathOutput);
 	}
 
 	// Converts a list of node ID's to a list of node names.
@@ -217,33 +210,33 @@ public class Algorithm {
 				}
 			}
 
-			for (int a = firstHalf.size() - 1; a >= 0; a--) {
-				output.add(firstHalf.get(a));
-			}
-			int end = endNode;
-			while (end != -1) {
-				output.add(end);
-				end = pathBackward[end];
-				if (end == -3) {
-					return new ArrayList<Integer>();
-				}
-			}
-			return output;
-		}
+            for (int a = firstHalf.size() - 1; a >= 0; a--) {
+                output.add(firstHalf.get(a));
+            }
+            int end = endNode;
+            while (end != -1) {
+                output.add(end);
+                end = pathBackward[end];
+                if (end == -3) {
+                    return new ArrayList<Integer>();
+                }
+            }
+            return output;
+        }
 
-		public String toString() {
-			return startNode + " " + endNode + " " + totalCost + " "
-					+ " Path: " + getString(this.getPath(), reverseMap);
-		}
-	}
+        public String toString() {
+            return startNode + " " + endNode + " " + totalCost + " "
+                + " Path: " + getString(this.getPath(), reverseMap);
+        }
+    }
 
-	// /////////////////////////////////////////////////////////////////////////
-	// Anything below here is a slightly modified dijkstras SSAD //
-	// ////////////////////////////////////////////////////////////////////////
-	static class VertexDist implements Comparable<VertexDist> {
-		private static final double EPS = 1E-14;
-		int vertex;
-		double distance;
+    // /////////////////////////////////////////////////////////////////////////
+    // Anything below here is a slightly modified dijkstras SSAD //
+    // ////////////////////////////////////////////////////////////////////////
+    static class VertexDist implements Comparable<VertexDist> {
+        private static final double EPS = 1E-14;
+        int vertex;
+        double distance;
 
 		public VertexDist(int vertex, double distance) {
 			this.vertex = vertex;
@@ -332,20 +325,20 @@ public class Algorithm {
 			if (optimal[u])
 				continue;
 
-			optimal[u] = true;
-			for (Edge e : edges[u]) {
-				double uv = e.dist;
-				int v = e.end;
-				if (uv != INF) {
-					if (dist[u] + uv < dist[v]) {
-						dist[v] = dist[u] + uv;
-						pathForward[v] = u;
-						frontier.add(new VertexDist(v, dist[v]));
-					}
-				}
-			}
-		}
-		return dist;
-		// 'dist' contains the shortest distance from start to all nodes
-	}
+            optimal[u] = true;
+            for (Edge e : edges[u]) {
+                double uv = e.dist;
+                int v = e.end;
+                if (uv != INF) {
+                    if (dist[u] + uv < dist[v]) {
+                        dist[v] = dist[u] + uv;
+                        pathForward[v] = u;
+                        frontier.add(new VertexDist(v, dist[v]));
+                    }
+                }
+            }
+        }
+        return dist;
+        // 'dist' contains the shortest distance from start to all nodes
+    }
 }
