@@ -181,7 +181,7 @@ public class AlgorithmRLCSP {
         ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
 
         // This was in pathlinker output so I do it as well
-        edgeOutput.append("# Tail\tHead\tKSP\tIndex\tPath Cost\n"); 
+        edgeOutput.append("# Tail\tHead\tKSP Index\tPath Cost\n"); 
 
         int count2 = 0;
         int countPath = 0;

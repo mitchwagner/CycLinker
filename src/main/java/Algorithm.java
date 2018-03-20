@@ -57,87 +57,100 @@ public class Algorithm {
         this.maxk = maxK;
     }
 
-	public void run() {
-		int start = 0; // super source = 0
-		int end = 1; // super sink = 1
-		int n = mapToInt.size(); // number of nodes
-		int e = weights.size(); // number of edges
+    public void run() {
+        int start = 0; // super source = 0
+        int end = 1; // super sink = 1
+        int n = mapToInt.size(); // number of nodes
+        int e = weights.size(); // number of edges
 
-		// Dijkstra's from the start, and the end.
-		// Stores the cost at from the start to all points.
-		final double[] startFromAllNodes = dijkstraFront(n, start, edges);
-		// Stores the cost from the end to all points.
-		final double[] endFromAllNodes = dijkstra(n, end, reverseEdges);
+        // Dijkstra's from the start, and the end.
+        // Stores the cost at from the start to all points.
+        final double[] startFromAllNodes = dijkstraFront(n, start, edges);
+        // Stores the cost from the end to all points.
+        final double[] endFromAllNodes = dijkstra(n, end, reverseEdges);
 
         //for (int i = 0; i < startFromAllNodes.length; i++) {
         //    System.out.println(startFromAllNodes[i]);
         //}
 
-		// Each edge has a shortest path; We will denote this as a
-		// 'CriticalPath'.
-		// A critical path does not contain only redundant edges. However, a
-		// CriticalPath might be the same as another CriticalPath.
-		TreeSet<CriticalPath> potentialPaths = new TreeSet<CriticalPath>();
-		for (int a = 0; a < e; a++) {
-			// CriticalPath has 4 parts; Source -> edgeStart -> edgeEnd -> Sink
-			CriticalPath tempPath = new CriticalPath(edgeStartSet.get(a),
-					edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
-					edges);
-			potentialPaths.add(tempPath);
-		}
+        // Each edge has a shortest path; We will denote this as a
+        // 'CriticalPath'.
+        // A critical path does not contain only redundant edges. However, a
+        // CriticalPath might be the same as another CriticalPath.
+        TreeSet<CriticalPath> potentialPaths = new TreeSet<CriticalPath>();
+        for (int a = 0; a < e; a++) {
+            // CriticalPath has 4 parts; Source -> edgeStart -> edgeEnd -> Sink
+            CriticalPath tempPath = new CriticalPath(edgeStartSet.get(a),
+                edgeEndSet.get(a), startFromAllNodes, endFromAllNodes,
+                edges);
+            potentialPaths.add(tempPath);
+        }
 
 		ArrayList<CriticalPath> outputPaths = new ArrayList<CriticalPath>();
 
-		// Header
-		edgeOutput.append("#tail	head	KSP index\n"); 
+        // Header
+        edgeOutput.append("# Tail\tHead\tRank\tPath Cost\n"); 
 
-		int count2 = 0;
-		int countPath = 0;
+        int count2 = 0;
+        int countPath = 0;
 
-		// This hashmap stores a blacklist of edges that have appeared on
-		// earlier paths
-		HashSet<Long> ReWriteThisWithEdgeClassLater = new HashSet<Long>();
-		// go through all of the potential paths.
-		while (!potentialPaths.isEmpty()) {
-			count2++;
-			CriticalPath get = potentialPaths.first();
-			potentialPaths.remove(get);
-			long startNode = get.startNode;
-			long endNode = get.endNode;
-			outputPaths.add(get);
+        // This hashmap stores a blacklist of edges that have appeared on
+        // earlier paths
+        HashSet<Long> ReWriteThisWithEdgeClassLater = new HashSet<Long>();
+        // go through all of the potential paths.
 
-			// output the edge
-			if (startNode != 0 && endNode != 1 && countPath < maxk) {
-			//if (startNode != 0 && endNode != 1) {
-				String outputEdge = reverseMap.get((int) startNode) + "\t"
-						+ reverseMap.get((int) endNode) + "\t" + count2;
-				edgeOutput.append(outputEdge + "\n");
-			}
+        double lastcost = 0;
+        long rank = 0;
+        while (!potentialPaths.isEmpty()) {
+            count2++;
+            CriticalPath get = potentialPaths.first();
+            potentialPaths.remove(get);
+            long startNode = get.startNode;
+            long endNode = get.endNode;
+            outputPaths.add(get);
 
-			// get the shortest path that uses that edge.
-			ArrayList<Integer> pathTemp = get.getPath();
+            // output the edge
+            if (startNode != 0 && endNode != 1 && countPath < maxk) {
+                
+                if (lastcost == get.totalCost) {
+                    // Don't do anything
+                }
+                else {
+                    rank++;
+                    lastcost = get.totalCost;
+                }
 
-			// figure out if this 'criticaledge' is new
-			boolean newEdge = false;
-			for (int b = 0; b < pathTemp.size() - 1; b++) {
-				long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
-				if (!ReWriteThisWithEdgeClassLater.contains(hash)) {
-					newEdge = true;
-					ReWriteThisWithEdgeClassLater.add(hash);
-				}
-			}
-
-			// if it is new, output edge
-			if (newEdge && countPath < maxk) {
-			//if (newEdge) {
-				countPath++;
-				pathOutput.append(countPath + "\t"
-						+ Math.pow(Math.E, -1 * get.totalCost) + "\t"
-						+ getString(pathTemp, reverseMap) + "\n");
+                String outputEdge = reverseMap.get((int) startNode) 
+                    + "\t"
+                    + reverseMap.get((int) endNode) 
+                    + "\t" + rank
+                    + "\t" + Math.pow(Math.E, -1 * get.totalCost);
+                edgeOutput.append(outputEdge + "\n");
             }
 
-		}
-	}
+            // get the shortest path that uses that edge.
+            ArrayList<Integer> pathTemp = get.getPath();
+
+            // figure out if this 'criticaledge' is new
+            boolean newEdge = false;
+            for (int b = 0; b < pathTemp.size() - 1; b++) {
+                long hash = hash(pathTemp.get(b), pathTemp.get(b + 1));
+                if (!ReWriteThisWithEdgeClassLater.contains(hash)) {
+                    newEdge = true;
+                    ReWriteThisWithEdgeClassLater.add(hash);
+                }
+            }
+
+            // if it is new, output edge
+            if (newEdge && countPath < maxk) {
+                countPath++;
+                pathOutput.append(countPath + "\t"
+                    + Math.pow(Math.E, -1 * get.totalCost) + "\t"
+                    + getString(pathTemp, reverseMap) + "\n");
+            }
+
+        }
+    }
 
 	// Converts a list of node ID's to a list of node names.
 	// Ex: [123, 4123] -> "P03422|Q02312"
