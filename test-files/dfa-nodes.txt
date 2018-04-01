@@ -1,0 +1,4 @@
+#Node	NodeType
+0	source
+1	none
+2	target

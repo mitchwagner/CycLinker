@@ -1,0 +1,10 @@
+#Node	NodeType
+0	source
+1	none
+2	target
+3	none
+4	target
+5	none
+6	target
+7	none
+8	target
